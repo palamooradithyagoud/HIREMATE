@@ -3,305 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkillRecommender — Curated YouTube Playlists</title>
+    <title>SkillPath — Premium Career Accelerator</title>
     <!-- SEO -->
-    <meta name="description" content="Discover the top 10 curated YouTube playlists for any skill. Premium AI-powered recommendations for beginners to advanced learners.">
+    <meta name="description" content="Discover curated YouTube playlists, professional certifications, and company-specific interview prep. AI-powered career recommendations.">
     <!-- Chart.js for Advanced Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 
-    <!-- Premium Background -->
-    <div class="bg-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </div>
-
-    <div class="container">
-        <!-- Hero Section -->
-        <header class="hero">
-            <h1 class="hero-title">
-                Learn the Right Things. <span class="gradient">Faster.</span>
-            </h1>
-            <p class="hero-subtitle">
-                We surface the highest-quality YouTube courses for any skill and level.
-            </p>
-        </header>
-
-        <main>
-        <!-- Search Panel -->
-        <section class="search-panel">
-            <div class="search-form" id="search-form">
-                <div class="input-group">
-                    <input 
-                        type="text" 
-                        id="skill-input" 
-                        class="skill-input" 
-                        placeholder="What do you want to learn?" 
-                        aria-label="Skill to learn"
-                        autocomplete="off"
-                    >
-                </div>
-                <select id="level-dropdown" class="level-dropdown" aria-label="Skill level">
-                    <option value="Beginner">🌱 Beginner</option>
-                    <option value="Intermediate">🔥 Intermediate</option>
-                    <option value="Advanced">🚀 Advanced</option>
-                </select>
-                <select id="language-dropdown" class="level-dropdown" aria-label="Learning language">
-                    <option value="English">🇺🇸 English</option>
-                    <option value="Hindi">🇮🇳 Hindi</option>
-                    <option value="Telugu">🇮🇳 Telugu</option>
-                </select>
-                <button id="cta-button" class="cta-button">
-                    Find Resources
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-icon">&lt;/&gt;</span>
+                <span class="brand-name">SkillPath</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-item active" id="btn-sidebar-dashboard" data-view="view-dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Dashboard</span>
                 </button>
-            </div>
-        </section>
+                <button class="nav-item" id="btn-sidebar-learning" data-view="view-learning">
+                    <span class="nav-icon">📖</span>
+                    <span class="nav-label">Learning</span>
+                </button>
+                <button class="nav-item" id="btn-sidebar-practice" data-view="view-practice">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-label">Practice</span>
+                </button>
+                <button class="nav-item" id="btn-sidebar-resume" data-view="view-resume">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-label">Resume Review</span>
+                </button>
+                <button class="nav-item" id="btn-sidebar-interviews" data-view="view-interviews">
+                    <span class="nav-icon">💼</span>
+                    <span class="nav-label">Mock Interviews</span>
+                </button>
+                <button class="nav-item" id="btn-sidebar-mentor" data-view="view-mentor">
+                    <span class="nav-icon">🔥</span>
+                    <span class="nav-label">AI Mentor</span>
+                </button>
+                <button class="nav-item" id="btn-sidebar-projects" data-view="view-projects">
+                    <span class="nav-icon">📁</span>
+                    <span class="nav-label">Projects</span>
+                </button>
+                <button class="nav-item" id="btn-sidebar-analytics" data-view="view-analytics">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-label">Analytics</span>
+                </button>
+                <button class="nav-item" id="btn-sidebar-settings" data-view="view-settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </nav>
 
-            <!-- Loading Indicator -->
-            <div id="loading" class="loading-indicator">
-                <div class="spinner"></div>
-                <p>Curating the best resources for you...</p>
-            </div>
-
-            <!-- Dashboard Progress (Visible only on Dashboard home) -->
-            <div id="dashboard-progress" class="progress-container" style="display: none;">
-                <!-- 1. HERO SECTION -->
-                <div class="dsa-hero">
-                    <div class="dsa-hero-text">
-                        <h1 class="dsa-title">DSA Command Center 🚀</h1>
-                        <p class="dsa-subtitle">Track. Solve. Improve. Dominate.</p>
-                    </div>
-                    <div class="dsa-hero-progress">
-                        <div class="progress-label-row">
-                            <span>Level Progress</span>
-                            <span id="level-progress-text">0 / 500 Mastered</span>
-                        </div>
-                        <div class="dsa-progress-bar-wrap">
-                            <div id="dsa-main-progress" class="dsa-progress-bar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. KPI CARDS -->
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-icon">📝</div>
-                        <div class="kpi-data">
-                            <h3>Total Solved</h3>
-                            <div class="kpi-value" id="kpi-completed">0</div>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon">🎯</div>
-                        <div class="kpi-data">
-                            <h3>Completion</h3>
-                            <div class="kpi-value" id="kpi-completion-pct">0%</div>
-                        </div>
-                    </div>
-                    <div class="kpi-card glow-card">
-                        <div class="kpi-icon">🔥</div>
-                        <div class="kpi-data">
-                            <h3>Current Streak</h3>
-                            <div class="kpi-value" id="kpi-streak">0 Days</div>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon">🔄</div>
-                        <div class="kpi-data">
-                            <h3>Revisions</h3>
-                            <div class="kpi-value" id="kpi-revisions">0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. ANALYTICS SECTION -->
-                <div class="analytics-grid">
-                    <div class="analytics-card">
-                        <h3>Difficulty Distribution</h3>
-                        <div class="chart-container">
-                            <canvas id="difficultyChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="analytics-card">
-                        <h3>Topic Mastery</h3>
-                        <div class="chart-container">
-                            <canvas id="topicChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="analytics-card full-width">
-                        <h3>Weekly Consistency</h3>
-                        <div class="chart-container" style="height: 200px;">
-                            <canvas id="consistencyChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 6. ELITE FEATURES -->
-                <div class="elite-features-grid">
-                    <div class="elite-card">
-                        <div class="elite-header">🎯 Today's Mission</div>
-                        <p class="elite-desc">Solve 2 arrays & 1 graph problem to maintain your trajectory.</p>
-                    </div>
-                    <div class="elite-card warn">
-                        <div class="elite-header">⚠️ Weakest Topic Alert</div>
-                        <p class="elite-desc" id="weakest-topic-text">Dynamic Programming (0% Success)</p>
-                    </div>
-                    <div class="elite-card success">
-                        <div class="elite-header">📈 Readiness Score</div>
-                        <p class="elite-desc score-text" id="readiness-score-text">Novice (12/100)</p>
+            <div class="streak-widget">
+                <div class="streak-header">🔥 Current Streak</div>
+                <div class="streak-body">
+                    <span class="streak-days" id="sidebar-streak-days">0 Days</span>
+                    <div class="streak-sparkline" id="sidebar-streak-chart">
+                        <canvas id="sidebarSparklineCanvas" style="height:30px; width:100%;"></canvas>
                     </div>
                 </div>
             </div>
+        </aside>
 
-            <!-- Tab Switcher -->
-            <div id="results-nav" class="results-tabs" style="display: none;">
-                <button id="tab-playlists" class="tab-btn active">📺 Resources</button>
-                <button id="tab-certificates" class="tab-btn">🏆 Certifications</button>
-                <button id="tab-roadmap" class="tab-btn">🗺️ AI Roadmap</button>
-                <span id="tier-label-badge" style="margin-left:auto; font-size:0.75rem; opacity:0.7; align-self:center;"></span>
-            </div>
-
-            <!-- View Step 1: YouTube Playlists -->
-            <div id="playlist-step" class="results-step active">
-                <div class="step-header">
-                    <h2 class="step-title">📺 Core Video Resources</h2>
-                    <p class="step-desc" id="tier-indicator">The best free curated playlists to build your foundation.</p>
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="search-box" id="global-search-trigger">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Search anything..." readonly>
+                    <span class="search-shortcut">⌘K</span>
                 </div>
-                <!-- AI Mentorship Recommendations (Tier 3) -->
-                <div id="ai-recommendations" style="display: none; margin-bottom: 30px;">
-                    <h3 class="gradient" style="margin-bottom: 15px;">🌟 AI Mentor Recommendations</h3>
-                    <div id="ai-recommendations-grid" class="results-grid"></div>
+                <div class="top-actions">
+                    <button class="btn-icon-only" aria-label="Notifications" id="notifications-btn">
+                        <span class="action-icon">🔔</span>
+                    </button>
+                    <div class="user-avatar" id="user-avatar-initials">SP</div>
                 </div>
-                <!-- Standard / Fallback Grid -->
-                <div id="playlist-grid" class="results-grid"></div>
-            </div>
+            </header>
 
-            <div id="certificate-step" class="results-step">
-                <div id="certificate-grid" class="results-grid"></div>
-            </div>
-
-            <!-- View Step: AI Roadmap -->
-            <div id="roadmap-step" class="results-step">
-                <div class="step-header">
-                    <h2 class="step-title">🗺️ Your Career Accelerator Roadmap</h2>
-                    <p class="step-desc">A step-by-step path tailored for you by Groq AI.</p>
-                </div>
-                <div id="roadmap-content" class="roadmap-container"></div>
-            </div>
-
-            <div id="empty-state" class="empty-state">
-                <p>Enter a skill above to generate your learning path.</p>
-            </div>
-
-            <!-- Mentor Mode Floating Button -->
-            <button id="mentor-mode-btn" title="Brutal AI Mentor" style="
-                position: fixed; bottom: 180px; right: 32px;
-                background: linear-gradient(135deg, #f97316, #dc2626);
-                color: white; border: none; border-radius: 50px;
-                padding: 14px 22px; font-size: 0.95rem; font-weight: 700;
-                cursor: pointer; box-shadow: 0 8px 30px rgba(249,115,22,0.45);
-                z-index: 999; display: flex; align-items: center; gap: 8px;
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-            " onmouseover="this.style.transform='scale(1.07)'" onmouseout="this.style.transform='scale(1)'">
-                🔥 Brutal Mentor Mode
-            </button>
-
-            <!-- Mentor Mode Modal -->
-            <div id="mentor-modal" style="
-                display: none; position: fixed; inset: 0;
-                background: rgba(0,0,0,0.75); z-index: 1000;
-                align-items: center; justify-content: center;
-            ">
-                <div style="
-                    background: #0f172a; border: 1px solid #f97316;
-                    border-radius: 20px; padding: 36px;
-                    max-width: 560px; width: 90%; position: relative;
-                    box-shadow: 0 25px 60px rgba(249,115,22,0.2);
-                ">
-                    <button id="mentor-modal-close" style="
-                        position: absolute; top: 16px; right: 20px;
-                        background: none; border: none; color: #94a3b8;
-                        font-size: 1.4rem; cursor: pointer;
-                    ">×</button>
-                    <h2 style="color:#f97316; margin-bottom:6px;">🔥 Brutal Mentor Mode</h2>
-                    <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:20px;">
-                        Get unfiltered, harsh, career-changing advice from your AI mentor.
-                    </p>
-                    <label style="color:#e2e8f0; font-size:0.85rem; font-weight:600;">Your Career Goal</label>
-                    <input id="mentor-goal" type="text" placeholder="e.g. Backend Engineer at Google"
-                        style="width:100%; padding:12px; margin:8px 0 16px;
-                               background:#1e293b; border:1px solid #334155;
-                               border-radius:10px; color:white; font-size:0.95rem; box-sizing:border-box;"
-                    />
-                    <label style="color:#e2e8f0; font-size:0.85rem; font-weight:600;">Your Current Skills (comma-separated)</label>
-                    <input id="mentor-skills" type="text" placeholder="e.g. React, HTML, CSS, JavaScript"
-                        style="width:100%; padding:12px; margin:8px 0 20px;
-                               background:#1e293b; border:1px solid #334155;
-                               border-radius:10px; color:white; font-size:0.95rem; box-sizing:border-box;"
-                    />
-                    <button id="mentor-submit-btn" style="
-                        width:100%; padding:14px;
-                        background: linear-gradient(135deg,#f97316,#dc2626);
-                        border:none; border-radius:12px; color:white;
-                        font-size:1rem; font-weight:700; cursor:pointer;
-                    ">Get Brutal Advice ⚡</button>
-                    <div id="mentor-result" style="margin-top:20px;"></div>
-                </div>
-            </div>
-
-            <!-- Interview Prep View -->
-            <div id="interview-prep-view" class="results-step">
-                <div class="step-header">
-                    <h2 class="step-title">💼 Step 3: Interview Preparation</h2>
-                    <p class="step-desc">Master your interviews with targeted preparation.</p>
-                </div>
-
-                <!-- Category Selection -->
-                <div id="interview-categories" class="interview-categories">
-                    <div class="category-card" id="btn-dsa-category">
-                        <div class="category-icon">🧠</div>
-                        <h3 class="category-name">DSA Preparation</h3>
-                        <p class="category-desc">Targeted LeetCode questions for top tech companies.</p>
+            <!-- VIEW: Dashboard -->
+            <section id="view-dashboard" class="content-view active">
+                <div class="welcome-banner">
+                    <div>
+                        <h1 class="welcome-title" id="welcome-title-banner">Welcome back! 👋</h1>
+                        <p class="welcome-subtitle">Track your progress and get personalized recommendations.</p>
                     </div>
-                    <div class="category-card" id="btn-resume-category">
-                        <div class="category-icon">📄</div>
-                        <h3 class="category-name">Resume Analyzer</h3>
-                        <p class="category-desc">AI-powered mockup to optimize your resume impact.</p>
+                    <div class="welcome-filter">
+                        <select class="select-clean">
+                            <option>This Week</option>
+                            <option>This Month</option>
+                        </select>
                     </div>
                 </div>
-                
+
+                <div class="dashboard-grid">
+                    <!-- Learning Progress Card -->
+                    <div class="card card-progress">
+                        <h3 class="card-heading">Learning Progress</h3>
+                        <div class="progress-container-row">
+                            <div class="circular-progress-wrap">
+                                <svg class="progress-ring" width="120" height="120">
+                                    <circle class="progress-ring-bg" stroke="#f1f5f9" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                    <circle class="progress-ring-bar" id="dashboard-progress-ring-bar" stroke="#2563eb" stroke-dasharray="314.16" stroke-dashoffset="314.16" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                </svg>
+                                <div class="progress-text-overlay">
+                                    <span class="progress-pct" id="dashboard-progress-pct">0%</span>
+                                    <span class="progress-sub" id="dashboard-progress-count">0 / 500 topics</span>
+                                </div>
+                            </div>
+                            <div class="progress-bars-list">
+                                <div class="p-bar-item">
+                                    <div class="p-bar-labels">
+                                        <span>DSA</span>
+                                        <span id="dsa-progress-label-pct">0%</span>
+                                    </div>
+                                    <div class="p-bar-track">
+                                        <div class="p-bar-fill" id="dsa-progress-bar-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="p-bar-item">
+                                    <div class="p-bar-labels">
+                                        <span>System Design</span>
+                                        <span id="sd-progress-label-pct">0%</span>
+                                    </div>
+                                    <div class="p-bar-track">
+                                        <div class="p-bar-fill" id="sd-progress-bar-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="p-bar-item">
+                                    <div class="p-bar-labels">
+                                        <span>AI/ML</span>
+                                        <span id="aiml-progress-label-pct">0%</span>
+                                    </div>
+                                    <div class="p-bar-track">
+                                        <div class="p-bar-fill" id="aiml-progress-bar-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="p-bar-item">
+                                    <div class="p-bar-labels">
+                                        <span>Development</span>
+                                        <span id="dev-progress-label-pct">0%</span>
+                                    </div>
+                                    <div class="p-bar-track">
+                                        <div class="p-bar-fill" id="dev-progress-bar-fill" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resume Score Card -->
+                    <div class="card card-resume-score">
+                        <h3 class="card-heading">Resume Score</h3>
+                        <div class="resume-score-body">
+                            <div class="score-row">
+                                <div class="doc-icon">📄</div>
+                                <div class="score-col">
+                                    <span class="score-big" id="dashboard-resume-score">N/A</span>
+                                    <span class="score-verdict" id="dashboard-resume-verdict" style="color:var(--text-muted);">No Upload</span>
+                                </div>
+                            </div>
+                            <ul class="score-checks">
+                                <li><span class="check-icon">✓</span> Impact: <strong id="dashboard-resume-impact">N/A</strong></li>
+                                <li><span class="check-icon">✓</span> Skills Match: <strong id="dashboard-resume-skills">N/A</strong></li>
+                                <li><span class="check-icon">✓</span> ATS Score: <strong id="dashboard-resume-ats">N/A</strong></li>
+                            </ul>
+                            <button class="btn-outline-primary" id="dashboard-improve-resume-btn">Improve Resume</button>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Card -->
+                    <div class="card card-upcoming">
+                        <h3 class="card-heading">Upcoming</h3>
+                        <div class="upcoming-list">
+                            <div class="upcoming-item">
+                                <div class="item-icon-box bg-blue-light">📅</div>
+                                <div class="item-details">
+                                    <span class="item-title">Mock Interview</span>
+                                    <span class="item-sub">Behavioral Round</span>
+                                    <span class="item-time">May 24, 5:00 PM</span>
+                                </div>
+                            </div>
+                            <div class="upcoming-item">
+                                <div class="item-icon-box bg-indigo-light">💻</div>
+                                <div class="item-details">
+                                    <span class="item-title">System Design</span>
+                                    <span class="item-sub">Rate Limiter Design</span>
+                                    <span class="item-time">May 26, 7:00 PM</span>
+                                </div>
+                            </div>
+                            <div class="upcoming-item">
+                                <div class="item-icon-box bg-green-light">🔒</div>
+                                <div class="item-details">
+                                    <span class="item-title">DSA Practice</span>
+                                    <span class="item-sub">Arrays & Hashing</span>
+                                    <span class="item-time">May 26, 6:00 PM</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-link-action" id="dashboard-view-calendar-btn">View Calendar</button>
+                    </div>
+
+                    <!-- Practice Overview Card -->
+                    <div class="card card-practice-overview">
+                        <h3 class="card-heading">Practice Overview</h3>
+                        <div class="practice-kpi-row">
+                            <div class="kpi-item">
+                                <span class="kpi-num" id="overview-solved-count">0</span>
+                                <span class="kpi-label">Problems Solved</span>
+                            </div>
+                            <div class="kpi-item">
+                                <span class="kpi-num" id="overview-success-rate">0%</span>
+                                <span class="kpi-label">Success Rate</span>
+                            </div>
+                            <div class="kpi-item">
+                                <span class="kpi-num" id="overview-streak">0</span>
+                                <span class="kpi-label">Contests</span>
+                            </div>
+                        </div>
+                        <div class="practice-chart-wrap">
+                            <canvas id="dashboardConsistencyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- AI Recommendations Card -->
+                    <div class="card card-recommendations">
+                        <h3 class="card-heading">AI Recommendations</h3>
+                        <span class="recommendations-sub">✨ Personalized for your goals</span>
+                        <div class="recommendations-list">
+                            <div class="rec-item" id="rec-item-graphs">
+                                <div class="rec-icon">⚡</div>
+                                <div class="rec-text">
+                                    <span class="rec-title">Focus on Graph Algorithms</span>
+                                    <span class="rec-desc">High impact for coding interviews</span>
+                                </div>
+                                <span class="rec-arrow">→</span>
+                            </div>
+                            <div class="rec-item" id="rec-item-sysdesign">
+                                <div class="rec-icon">🧭</div>
+                                <div class="rec-text">
+                                    <span class="rec-title">Improve System Design</span>
+                                    <span class="rec-desc">Practice scalability concepts</span>
+                                </div>
+                                <span class="rec-arrow">→</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skill Distribution Card -->
+                    <div class="card card-distribution">
+                        <h3 class="card-heading">Skill Distribution</h3>
+                        <div class="distribution-body">
+                            <div class="distribution-chart-wrap">
+                                <canvas id="dashboardSkillDistributionChart"></canvas>
+                            </div>
+                            <div class="distribution-legend">
+                                <div class="legend-item"><span class="legend-dot dot-dsa"></span> DSA <span class="legend-pct" id="legend-pct-dsa">35%</span></div>
+                                <div class="legend-item"><span class="legend-dot dot-sd"></span> System Design <span class="legend-pct" id="legend-pct-sd">27%</span></div>
+                                <div class="legend-item"><span class="legend-dot dot-aiml"></span> AI/ML <span class="legend-pct" id="legend-pct-aiml">18%</span></div>
+                                <div class="legend-item"><span class="legend-dot dot-dev"></span> Development <span class="legend-pct" id="legend-pct-dev">20%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Learning -->
+            <section id="view-learning" class="content-view">
+                <!-- Search Panel -->
+                <div class="search-panel">
+                    <div class="search-form">
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                id="skill-input" 
+                                class="skill-input" 
+                                placeholder="What do you want to learn?" 
+                                aria-label="Skill to learn"
+                                autocomplete="off"
+                            >
+                        </div>
+                        <select id="level-dropdown" class="level-dropdown" aria-label="Skill level">
+                            <option value="Beginner">🌱 Beginner</option>
+                            <option value="Intermediate">🔥 Intermediate</option>
+                            <option value="Advanced">🚀 Advanced</option>
+                        </select>
+                        <select id="language-dropdown" class="level-dropdown" aria-label="Learning language">
+                            <option value="English">🇺🇸 English</option>
+                            <option value="Hindi">🇮🇳 Hindi</option>
+                            <option value="Telugu">🇮🇳 Telugu</option>
+                        </select>
+                        <button id="cta-button" class="cta-button">
+                            Find Resources
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div id="loading" class="loading-indicator">
+                    <div class="spinner"></div>
+                    <p>Curating the best resources for you...</p>
+                </div>
+
+                <!-- Tab Switcher -->
+                <div id="results-nav" class="results-tabs" style="display: none;">
+                    <button id="tab-playlists" class="tab-btn active">📺 Resources</button>
+                    <button id="tab-certificates" class="tab-btn">🏆 Certifications</button>
+                    <button id="tab-roadmap" class="tab-btn">🗺️ AI Roadmap</button>
+                    <span id="tier-label-badge" style="margin-left:auto; font-size:0.75rem; opacity:0.7; align-self:center;"></span>
+                </div>
+
+                <!-- View Step 1: YouTube Playlists -->
+                <div id="playlist-step" class="results-step active">
+                    <div class="step-header">
+                        <h2 class="step-title">📺 Core Video Resources</h2>
+                        <p class="step-desc" id="tier-indicator">The best free curated playlists to build your foundation.</p>
+                    </div>
+                    <!-- AI Mentorship Recommendations (Tier 3) -->
+                    <div id="ai-recommendations" style="display: none; margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 15px; font-family:'Outfit', sans-serif;">🌟 AI Mentor Recommendations</h3>
+                        <div id="ai-recommendations-grid" class="results-grid"></div>
+                    </div>
+                    <!-- Standard / Fallback Grid -->
+                    <div id="playlist-grid" class="results-grid"></div>
+                </div>
+
+                <div id="certificate-step" class="results-step">
+                    <div class="step-header">
+                        <h2 class="step-title">🏆 Professional Certifications</h2>
+                        <p class="step-desc">Validated programs from Coursera, Udemy, edX, etc.</p>
+                    </div>
+                    <div id="certificate-grid" class="results-grid"></div>
+                </div>
+
+                <!-- View Step: AI Roadmap -->
+                <div id="roadmap-step" class="results-step">
+                    <div class="step-header">
+                        <h2 class="step-title">🗺️ Your Career Accelerator Roadmap</h2>
+                        <p class="step-desc">A step-by-step path tailored for you by Groq AI.</p>
+                    </div>
+                    <div id="roadmap-content" style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; display:flex; flex-direction:column; gap:20px;"></div>
+                </div>
+
+                <div id="empty-state" class="empty-state">
+                    <p>Enter a skill above to generate your learning path.</p>
+                </div>
+            </section>
+
+            <!-- VIEW: Practice (LeetCode Command Center) -->
+            <section id="view-practice" class="content-view">
                 <!-- DSA Category View (COMMAND CENTER) -->
-                <div id="dsa-prep-content" style="display: none;">
-                    <button class="btn-back" id="back-to-categories-dsa">← Exit Command Center</button>
-
-                    <!-- 5. SMART FILTER SYSTEM & COMPANY SELECTION -->
+                <div id="dsa-prep-content">
+                    <!-- Company-wise lists -->
                     <div class="dsa-workspace">
-                        <div class="workspace-header">
-                            <h2>Problem Database</h2>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+                            <h2 style="font-family:'Outfit', sans-serif; font-weight:800; font-size:1.5rem;">Problem Database</h2>
                         </div>
                         
                         <!-- Filters -->
-                        <div class="smart-filters">
-                            <div class="filter-group">
-                                <input type="text" id="company-search" placeholder="Search Company (e.g. Google)..." class="skill-input">
-                            </div>
-                            <div class="filter-group">
-                                <select id="filter-difficulty" class="level-dropdown">
-                                    <option value="All">All Difficulties</option>
-                                    <option value="Easy">Easy</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Hard">Hard</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <select id="filter-status" class="level-dropdown">
-                                    <option value="All">All Statuses</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Completed">Completed</option>
-                                </select>
-                            </div>
+                        <div class="search-panel" style="padding:20px; display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
+                            <input type="text" id="company-search" placeholder="Search Company (e.g. Google)..." class="skill-input" style="flex:1; padding:10px 16px;">
+                            <select id="filter-difficulty" class="level-dropdown" style="padding:10px 16px;">
+                                <option value="All">All Difficulties</option>
+                                <option value="Easy">Easy</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Hard">Hard</option>
+                            </select>
+                            <select id="filter-status" class="level-dropdown" style="padding:10px 16px;">
+                                <option value="All">All Statuses</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Completed">Completed</option>
+                            </select>
                         </div>
 
                         <!-- Company Grid (Visible initially) -->
@@ -314,7 +392,7 @@
                         <!-- Questions List (Visible after company selection) -->
                         <div id="questions-view" class="questions-view" style="display: none; margin-top: 24px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
-                                <h3 id="selected-company-title" class="company-title" style="margin:0;">Company Name</h3>
+                                <h3 id="selected-company-title" class="company-title" style="margin:0; font-family:'Outfit', sans-serif;">Company Name</h3>
                                 <button id="back-to-companies" class="btn-back">← Change Company</button>
                             </div>
                             <div id="questions-grid" class="results-grid">
@@ -323,21 +401,20 @@
                         </div>
                     </div>
                 </div>
+            </section>
 
-                <!-- Resume Analyzer View -->
-                <div id="resume-analyzer-content" style="display: none;">
-                    <button class="btn-back" id="back-to-categories-resume">← Categories</button>
-                    
+            <!-- VIEW: Resume Review (Resume Analyzer) -->
+            <section id="view-resume" class="content-view">
+                <div id="resume-analyzer-content">
                     <div class="resume-analyzer-ui">
-                        <!-- Inputs for Role & Level -->
                         <div class="resume-meta-inputs" id="resume-meta-inputs">
                             <div class="input-group">
                                 <label class="input-label">Target Role</label>
-                                <input type="text" id="target-role" class="skill-input" placeholder="e.g. Software Engineer, Data Scientist">
+                                <input type="text" id="target-role" class="skill-input" placeholder="e.g. Software Engineer, Data Scientist" style="padding:12px 16px;">
                             </div>
                             <div class="input-group">
                                 <label class="input-label">Benchmark Standard</label>
-                                <select id="target-benchmark" class="level-dropdown">
+                                <select id="target-benchmark" class="level-dropdown" style="padding:12px 16px; width:100%;">
                                     <option value="FAANG">FAANG / Top Tier</option>
                                     <option value="Tier-1 Startup">Tier-1 Startup</option>
                                     <option value="Average Company" selected>Average Company</option>
@@ -347,17 +424,17 @@
 
                         <div class="upload-zone" id="upload-zone">
                             <div class="upload-icon">📤</div>
-                            <h3>Upload your Resume</h3>
-                            <p>Drag and drop your PDF or DOCX file here, or click to browse.</p>
+                            <h3 style="font-family:'Outfit', sans-serif; font-weight:700;">Upload your Resume</h3>
+                            <p style="color:var(--text-sub); font-size:0.9rem; margin-top:4px;">Drag and drop your PDF or DOCX file here, or click to browse.</p>
                             <input type="file" id="resume-upload" hidden accept=".pdf,.doc,.docx">
-                            <button class="cta-button" id="btn-trigger-upload" style="margin-top: 20px;">
+                            <button class="cta-button" id="btn-trigger-upload" style="margin-top: 20px; padding:12px 24px;">
                                 Analyze Resume
                             </button>
                         </div>
 
-                        <div id="analysis-status" class="analysis-status" style="display: none;">
+                        <div id="analysis-status" class="analysis-status" style="display: none; text-align:center; padding:40px;">
                             <div class="spinner"></div>
-                            <p id="status-text">Scanning for keywords...</p>
+                            <p id="status-text" style="color:var(--text-sub); font-weight:600;">Scanning for keywords...</p>
                         </div>
 
                         <!-- Real Analysis Results -->
@@ -365,11 +442,11 @@
                             <div class="results-header">
                                 <div class="decision-wrap">
                                     <div class="score-meta">
-                                        <h3 id="res-score-value" class="score-value">0/10</h3>
-                                        <span id="res-market" class="confidence-tag">Market: Top 5%</span>
+                                        <h3 id="res-score-value" class="score-value" style="font-family:'Outfit', sans-serif; font-size:2rem; font-weight:800;">0/10</h3>
+                                        <span id="res-market" class="pill-badge" style="background:var(--primary-light); color:var(--primary); font-weight:700;">Market: Top 5%</span>
                                     </div>
                                     <div class="verdict-pill-wrap">
-                                        <span id="res-verdict-pill" class="decision-pill">SHORTLIST</span>
+                                        <span id="res-verdict-pill" class="decision-pill select">SHORTLIST</span>
                                     </div>
                                 </div>
                                 <div class="verdict-box">
@@ -377,40 +454,40 @@
                                 </div>
                             </div>
 
-                            <div class="detailed-analysis-grid">
+                            <div class="evaluation-grid" style="display:grid; grid-template-columns: 1fr; gap:24px;">
                                 <!-- STAGE 1: ATS -->
-                                <div class="analysis-section ats-section">
-                                    <h4>🤖 STAGE 1: ATS Simulation</h4>
-                                    <div class="ats-stats">
-                                        <div class="stat-item">
-                                            <span class="stat-label">Keyword Match</span>
-                                            <span id="res-ats-match" class="stat-value">0%</span>
+                                <div class="card">
+                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">🤖 STAGE 1: ATS Simulation</h4>
+                                    <div style="display:flex; gap:24px; margin-bottom:16px;">
+                                        <div>
+                                            <span style="font-size:0.8rem; color:var(--text-muted); display:block;">Keyword Match</span>
+                                            <strong id="res-ats-match" style="font-size:1.5rem; color:var(--text-main);">0%</strong>
                                         </div>
-                                        <div class="stat-item">
-                                            <span class="stat-label">Pass Probability</span>
-                                            <span id="res-ats-prob" class="stat-value">High</span>
+                                        <div>
+                                            <span style="font-size:0.8rem; color:var(--text-muted); display:block;">Pass Probability</span>
+                                            <strong id="res-ats-prob" style="font-size:1.5rem; color:var(--text-main);">High</strong>
                                         </div>
                                     </div>
-                                    <div class="ats-keywords">
-                                        <p class="sub-label">Missing Critical Keywords:</p>
-                                        <ul id="res-ats-missing" class="keyword-tags"></ul>
+                                    <div>
+                                        <p style="font-size:0.85rem; font-weight:600; color:var(--text-sub); margin-bottom:6px;">Missing Critical Keywords:</p>
+                                        <ul id="res-ats-missing" class="keyword-tags" style="display:flex; flex-wrap:wrap; gap:8px; list-style:none;"></ul>
                                     </div>
                                 </div>
 
                                 <!-- STAGE 2: RECRUITER -->
-                                <div class="analysis-section recruiter-section">
-                                    <h4>👀 STAGE 2: Recruiter Scan (10s)</h4>
-                                    <p id="res-recruiter-impression" class="text-block italic"></p>
-                                    <div class="recruiter-reasons">
-                                        <p class="sub-label">Top Reasons:</p>
+                                <div class="card">
+                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">👀 STAGE 2: Recruiter Scan (10s)</h4>
+                                    <p id="res-recruiter-impression" style="font-style:italic; font-size:0.9rem; color:var(--text-sub); margin-bottom:16px;"></p>
+                                    <div>
+                                        <p style="font-size:0.85rem; font-weight:600; color:var(--text-sub); margin-bottom:6px;">Top Concerns:</p>
                                         <ul id="res-recruiter-reasons" class="detailed-list"></ul>
                                     </div>
                                 </div>
 
                                 <!-- STAGE 3: HIRING MANAGER TABLE -->
-                                <div class="analysis-section hm-section">
-                                    <h4>👨‍💼 STAGE 3: Deep Evaluation</h4>
-                                    <div class="table-container">
+                                <div class="card">
+                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">👨‍💼 STAGE 3: Deep Evaluation</h4>
+                                    <div style="overflow-x:auto;">
                                         <table class="evaluation-table">
                                             <thead>
                                                 <tr>
@@ -428,51 +505,159 @@
                                 </div>
 
                                 <!-- Action Plan & Rewrites -->
-                                <div class="analysis-section action-plan-section">
-                                    <h4>📋 Strategic Action Plan</h4>
+                                <div class="card">
+                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">📋 Strategic Action Plan</h4>
                                     <div class="action-grid">
                                         <div class="action-box">
-                                            <h5>🚀 Proposed Projects</h5>
-                                            <div id="res-action-projects" class="projects-mini-list"></div>
+                                            <h5 style="font-weight:700; margin-bottom:10px;">Proposed Projects</h5>
+                                            <div id="res-action-projects" style="display:flex; flex-direction:column; gap:12px;"></div>
                                         </div>
                                         <div class="action-box">
-                                            <h5>🛠️ Tools to Master</h5>
-                                            <ul id="res-action-tools" class="keyword-tags"></ul>
+                                            <h5 style="font-weight:700; margin-bottom:10px;">Tools to Master</h5>
+                                            <ul id="res-action-tools" class="detailed-list"></ul>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="analysis-section rewrites-section">
-                                    <h4>✨ Professional Rewrites</h4>
+                                <div class="card">
+                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">✨ Professional Rewrites</h4>
                                     <div id="res-action-rewrites" class="rewrites-container"></div>
                                 </div>
 
-                                <div class="analysis-section-group">
-                                    <div class="analysis-section">
-                                        <h4>📉 Rejection Risk</h4>
-                                        <p id="res-risk-text" class="text-block warn"></p>
-                                    </div>
-                                    <div class="analysis-section">
-                                        <h4>🌟 What Works</h4>
-                                        <ul id="res-works-list" class="detailed-list"></ul>
-                                    </div>
+                                <div class="card">
+                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">📉 Rejection Risk</h4>
+                                    <p id="res-risk-text" style="color:var(--danger); font-size:0.9rem;"></p>
+                                </div>
+                                
+                                <div class="card">
+                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">🌟 What Works</h4>
+                                    <ul id="res-works-list" class="detailed-list"></ul>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Recent Searches View -->
-            <div id="recent-search-view" class="results-step">
-                <div class="step-header">
-                    <h2 class="step-title">🕒 Recent Searches</h2>
-                    <p class="step-desc">A log of your recent queries powered by Supabase.</p>
+            <!-- VIEW: Mock Interviews -->
+            <section id="view-interviews" class="content-view">
+                <div class="welcome-banner">
+                    <div>
+                        <h1 class="welcome-title">Mock Interviews</h1>
+                        <p class="welcome-subtitle">Schedule and prepare for simulated technical and behavioral rounds.</p>
+                    </div>
                 </div>
-                <div id="recent-search-grid" class="results-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-                    <!-- Loaded dynamically -->
+                <div class="dashboard-grid">
+                    <div class="card card-progress">
+                        <h3 class="card-heading">Interview Preparation Checklist</h3>
+                        <ul class="score-checks">
+                            <li><span class="check-icon">✓</span> Practice behavioral questions (STAR method)</li>
+                            <li><span class="check-icon">✓</span> Complete at least 2 mock coding interviews</li>
+                            <li><span class="check-icon">✓</span> Revise system design scaling patterns</li>
+                        </ul>
+                    </div>
+                    <div class="card card-upcoming" style="grid-row:span 1;">
+                        <h3 class="card-heading">Scheduled Sessions</h3>
+                        <div class="upcoming-list">
+                            <div class="upcoming-item">
+                                <div class="item-icon-box bg-blue-light">📅</div>
+                                <div class="item-details">
+                                    <span class="item-title">Mock Interview</span>
+                                    <span class="item-sub">Behavioral Round</span>
+                                    <span class="item-time">May 24, 5:00 PM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- VIEW: AI Mentor (dedicated consultation space) -->
+            <section id="view-mentor" class="content-view">
+                <div class="welcome-banner">
+                    <div>
+                        <h1 class="welcome-title">AI Mentor Consultation</h1>
+                        <p class="welcome-subtitle">Get unfiltered, harsh, career-changing advice from your AI mentor.</p>
+                    </div>
+                </div>
+                <div class="card" style="max-width:640px; margin:0 auto;">
+                    <h2 style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--text-main); margin-bottom:16px;">🔥 Ask Your Brutal Mentor</h2>
+                    <label class="input-label">Your Career Goal</label>
+                    <input id="mentor-goal-page" type="text" placeholder="e.g. Backend Engineer at Google" class="skill-input" style="padding:12px; margin-bottom:16px; width:100%; box-sizing:border-box;" />
+                    
+                    <label class="input-label">Your Current Skills (comma-separated)</label>
+                    <input id="mentor-skills-page" type="text" placeholder="e.g. React, HTML, CSS, JavaScript" class="skill-input" style="padding:12px; margin-bottom:20px; width:100%; box-sizing:border-box;" />
+                    
+                    <button id="mentor-submit-btn-page" class="cta-button" style="width:100%; padding:14px; background:linear-gradient(135deg,#f97316,#dc2626); border:none; border-radius:12px; color:white; font-size:1rem; font-weight:700; cursor:pointer;">
+                        Get Brutal Advice ⚡
+                    </button>
+                    <div id="mentor-result-page" style="margin-top:20px;"></div>
+                </div>
+            </section>
+
+            <!-- VIEW: Projects -->
+            <section id="view-projects" class="content-view">
+                <div class="welcome-banner">
+                    <div>
+                        <h1 class="welcome-title">Dynamic Projects</h1>
+                        <p class="welcome-subtitle">AI-recommended project blueprints to build a stellar portfolio.</p>
+                    </div>
+                </div>
+                <div id="projects-list-container" class="results-grid">
+                    <div class="card">
+                        <span class="pill-badge" style="width:fit-content; margin-bottom:12px;">Backend</span>
+                        <h3 class="card-title">Distributed Rate Limiter</h3>
+                        <p class="card-desc">Build an API rate limiter service in Go/Python utilizing Redis token bucket algorithm.</p>
+                    </div>
+                    <div class="card">
+                        <span class="pill-badge" style="width:fit-content; margin-bottom:12px;">Fullstack</span>
+                        <h3 class="card-title">Realtime Collaborative Editor</h3>
+                        <p class="card-desc">Create a dynamic text editor using WebSockets and Operational Transformation patterns.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Analytics -->
+            <section id="view-analytics" class="content-view">
+                <div class="welcome-banner">
+                    <div>
+                        <h1 class="welcome-title">Advanced Analytics</h1>
+                        <p class="welcome-subtitle">Deep analytics regarding your practice and learning coverage.</p>
+                    </div>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3 class="card-heading">Difficulty Distribution</h3>
+                        <div style="height:200px;">
+                            <canvas id="analyticsDifficultyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-heading">Topic Mastery</h3>
+                        <div style="height:200px;">
+                            <canvas id="analyticsTopicChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Settings -->
+            <section id="view-settings" class="content-view">
+                <div class="welcome-banner">
+                    <div>
+                        <h1 class="welcome-title">Account Settings</h1>
+                        <p class="welcome-subtitle">Configure your profile, API keys, and configurations.</p>
+                    </div>
+                </div>
+                <div class="card" style="max-width:480px;">
+                    <h3 class="card-heading">Profile Configurations</h3>
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <button class="btn-outline-primary" style="color:var(--danger); border-color:var(--danger);" onclick="location.href='/logout'">
+                            Sign Out / Log Out
+                        </button>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -481,31 +666,31 @@
         <span id="toast-message">Oops! Something went wrong.</span>
     </div>
 
-    <!-- Left Side Quick Access -->
-    <div class="left-stack">
-        <button class="stack-btn" id="dashboard-btn" aria-label="Dashboard">
-            <span class="btn-icon">📊</span>
-            <span class="btn-label">Dashboard</span>
-        </button>
-        <a href="https://roadmap.sh/" target="_blank" class="stack-btn" aria-label="Roadmaps">
-            <span class="btn-icon">🗺️</span>
-            <span class="btn-label">Roadmaps</span>
-        </a>
-        <button class="stack-btn" id="interview-prep-btn" aria-label="Interview Prep">
-            <span class="btn-icon">💼</span>
-            <span class="btn-label">Interview Prep</span>
-        </button>
-        <button class="stack-btn" id="recent-search-btn" aria-label="Recent Searched">
-            <span class="btn-icon">🕒</span>
-            <span class="btn-label">Recent Searched</span>
-        </button>
-    </div>
-
     <!-- AI Assistant FAB -->
     <a href="https://hackathon-for-ai-agent.vercel.app/" target="_blank" class="ai-assistant-fab" aria-label="Ask AI Assistant">
         <span class="ai-icon">✨</span>
         <span class="ai-label">Ask AI Doubts</span>
     </a>
+
+    <!-- Floating Brutal Mentor Mode Button & Modal (Optional/Fallback) -->
+    <button id="mentor-mode-btn" title="Brutal AI Mentor" style="display:none;">
+        🔥 Brutal Mentor Mode
+    </button>
+    <div id="mentor-modal" style="display: none;">
+        <div>
+            <button id="mentor-modal-close" style="position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">×</button>
+            <h2 style="color:#f97316; margin-bottom:6px;">🔥 Brutal Mentor Mode</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">
+                Get unfiltered, harsh, career-changing advice from your AI mentor.
+            </p>
+            <label class="input-label">Your Career Goal</label>
+            <input id="mentor-goal" type="text" placeholder="e.g. Backend Engineer at Google" class="skill-input" style="width:100%; padding:12px; margin:8px 0 16px; box-sizing:border-box;" />
+            <label class="input-label">Your Current Skills (comma-separated)</label>
+            <input id="mentor-skills" type="text" placeholder="e.g. React, HTML, CSS, JavaScript" class="skill-input" style="width:100%; padding:12px; margin:8px 0 20px; box-sizing:border-box;" />
+            <button id="mentor-submit-btn" class="cta-button" style="width:100%; padding:14px; background: linear-gradient(135deg,#f97316,#dc2626); color:white; font-size:1rem; font-weight:700; cursor:pointer;">Get Brutal Advice ⚡</button>
+            <div id="mentor-result" style="margin-top:20px;"></div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>

@@ -283,6 +283,25 @@ STRICT RULES:
         )
         
         analysis = json.loads(completion.choices[0].message.content.strip())
+
+        # Save analysis to Supabase
+        sb = get_sb()
+        user_id = session.get("user_id")
+        if sb and user_id:
+            try:
+                sb.table("resume_analysis").insert({
+                    "user_id": user_id,
+                    "resume_file_url": file.filename or "uploaded_resume",
+                    "ats_score": int(analysis.get("final_score", 0) * 10),
+                    "ai_feedback": {
+                        "verdict": analysis.get("hire_verdict", "No Hire"),
+                        "ats_pass_probability": analysis.get("ats_simulation", {}).get("ats_pass_probability", "Low")
+                    },
+                    "improvement_suggestions": analysis.get("action_plan")
+                }).execute()
+            except Exception as e:
+                print(f"[DB] Save resume analysis failed: {e}")
+
         return jsonify(analysis)
     except Exception as e:
         print(f"[ERROR] AI Analysis failed: {e}")
@@ -931,7 +950,6 @@ def login():
     if not email or not password:
         return jsonify({"error": "Email and password are required."}), 400
 
-    # For demo: accept any valid email + password with 6+ chars
     import re
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         return jsonify({"error": "Invalid email address."}), 400
@@ -940,6 +958,32 @@ def login():
 
     session["logged_in"] = True
     session["user_email"] = email
+
+    # Fetch or create profile in Supabase
+    sb = get_sb()
+    if sb:
+        try:
+            res = sb.table("profiles").select("id, full_name").eq("email", email).execute()
+            if res.data:
+                session["user_id"] = res.data[0]["id"]
+                session["user_name"] = res.data[0]["full_name"]
+            else:
+                user_id = str(uuid.uuid4())
+                name = email.split("@")[0].capitalize()
+                sb.table("profiles").insert({
+                    "id": user_id,
+                    "full_name": name,
+                    "email": email
+                }).execute()
+                session["user_id"] = user_id
+                session["user_name"] = name
+        except Exception as e:
+            print(f"[AUTH] Supabase profile sync failed: {e}")
+            # Fallback to email prefix
+            session["user_name"] = email.split("@")[0].capitalize()
+    else:
+        session["user_name"] = email.split("@")[0].capitalize()
+
     return jsonify({"success": True})
 
 @app.route("/signup", methods=["POST"])
@@ -961,12 +1005,129 @@ def signup():
     session["logged_in"] = True
     session["user_email"] = email
     session["user_name"]  = name
+
+    # Create profile in Supabase
+    sb = get_sb()
+    if sb:
+        try:
+            user_id = str(uuid.uuid4())
+            sb.table("profiles").insert({
+                "id": user_id,
+                "full_name": name,
+                "email": email
+            }).execute()
+            session["user_id"] = user_id
+        except Exception as e:
+            print(f"[AUTH] Supabase profile signup failed: {e}")
+
     return jsonify({"success": True})
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login-page")
+
+@app.route("/get-user-session", methods=["GET"])
+def get_user_session():
+    if not session.get("logged_in"):
+        return jsonify({"logged_in": False}), 401
+    return jsonify({
+        "logged_in": True,
+        "email": session.get("user_email"),
+        "name": session.get("user_name") or session.get("user_email").split("@")[0]
+    })
+
+@app.route("/get-latest-resume", methods=["GET"])
+def get_latest_resume():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify(None)
+    sb = get_sb()
+    if not sb:
+        return jsonify(None)
+    try:
+        res = sb.table("resume_analysis")\
+                .select("*")\
+                .eq("user_id", session["user_id"])\
+                .order("created_at", desc=True)\
+                .limit(1)\
+                .execute()
+        if res.data:
+            return jsonify({
+                "score": res.data[0].get("ats_score", 85),
+                "verdict": res.data[0].get("ai_feedback", {}).get("verdict", "Excellent") if isinstance(res.data[0].get("ai_feedback"), dict) else "Excellent",
+                "impact": "Strong",
+                "match": res.data[0].get("ai_feedback", {}).get("ats_pass_probability", "High") if isinstance(res.data[0].get("ai_feedback"), dict) else "High",
+                "ats": res.data[0].get("ats_score", 85)
+            })
+        return jsonify(None)
+    except Exception as e:
+        print(f"[RESUME] Get failed: {e}")
+        return jsonify(None)
+
+@app.route("/sync-dsa-progress", methods=["POST"])
+def sync_dsa_progress():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify({"error": "Unauthorized"}), 401
+    body = request.get_json(silent=True) or {}
+    solved_list = body.get("solved_list", [])
+    
+    sb = get_sb()
+    if not sb:
+        return jsonify({"error": "DB unavailable"}), 500
+        
+    try:
+        total = len(solved_list)
+        easy = len([q for q in solved_list if q.get("difficulty") == "Easy"])
+        medium = len([q for q in solved_list if q.get("difficulty") == "Medium"])
+        hard = len([q for q in solved_list if q.get("difficulty") == "Hard"])
+        
+        # Sync to learning_progress
+        sb.table("learning_progress").upsert({
+            "session_id": session["user_id"],
+            "skill_name": "dsa",
+            "completed_steps": solved_list,
+            "completion_pct": min(100.0, float(total) / 500 * 100)
+        }, on_conflict="session_id, skill_name").execute()
+        
+        # Sync to dsa_progress
+        dsa_res = sb.table("dsa_progress").select("id").eq("user_id", session["user_id"]).limit(1).execute()
+        dsa_row = {
+            "user_id": session["user_id"],
+            "total_solved": total,
+            "easy_solved": easy,
+            "medium_solved": medium,
+            "hard_solved": hard
+        }
+        if dsa_res.data:
+            sb.table("dsa_progress").update(dsa_row).eq("id", dsa_res.data[0]["id"]).execute()
+        else:
+            sb.table("dsa_progress").insert(dsa_row).execute()
+        
+        return jsonify({"status": "success"})
+    except Exception as e:
+        print(f"[DSA] Sync failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/get-dsa-progress", methods=["GET"])
+def get_dsa_progress():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify([])
+    sb = get_sb()
+    if not sb:
+        return jsonify([])
+    try:
+        res = sb.table("learning_progress")\
+                .select("completed_steps")\
+                .eq("session_id", session["user_id"])\
+                .eq("skill_name", "dsa")\
+                .limit(1)\
+                .execute()
+        if res.data:
+            return jsonify(res.data[0].get("completed_steps", []))
+        return jsonify([])
+    except Exception as e:
+        print(f"[DSA] Get failed: {e}")
+        return jsonify([])
 
 @app.route("/")
 def index():
