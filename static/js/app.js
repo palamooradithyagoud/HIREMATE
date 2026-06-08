@@ -1022,12 +1022,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Overall progress = combination of DSA + playlist progress
         const dsaPct = Math.min(100, Math.round((totalSolved / GOAL) * 100));
-        const playlistPct = totalPlaylistVideos > 0 ? Math.round((completedPlaylistVideos / totalPlaylistVideos) * 100) : 0;
-        const overallPct = totalSolved > 0 || totalPlaylistVideos > 0
-            ? Math.round((dsaPct + playlistPct) / 2)
-            : 0;
         const overallTopics = totalSolved + completedPlaylistVideos;
         const overallTotal = GOAL + totalPlaylistVideos;
+        const overallPct = overallTotal > 0 ? Math.min(100, Math.round((overallTopics / overallTotal) * 100)) : 0;
 
         progressPctText.textContent = `${overallPct}%`;
         progressCountText.textContent = `${overallTopics} / ${overallTotal} topics`;
@@ -1139,11 +1136,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return d.toDateString();
         }).reverse();
         
-        // Use default mockup trend if no activity yet
-        let trendData = [30, 45, 35, 60, 50, 75, 65];
+        // Use zeroed trend if no activity yet
+        let trendData = [0, 0, 0, 0, 0, 0, 0];
         if (solved && solved.length > 0) {
             const calculated = last7.map(date => solved.filter(s => new Date(s.solvedAt).toDateString() === date).length * 10);
-            if (calculated.some(v => v > 0)) trendData = calculated;
+            trendData = calculated;
         }
 
         charts.dashCons = new Chart(ctx, {
@@ -1194,6 +1191,25 @@ document.addEventListener('DOMContentLoaded', () => {
         // If no data at all, show equal placeholder
         const hasData = dsaCount + sdCount + aiCount + devCount > 0;
         const chartData = hasData ? [dsaCount, sdCount, aiCount, devCount] : [1, 1, 1, 1];
+
+        // Update legend percentages in UI
+        const dsaPctText = document.getElementById('legend-pct-dsa');
+        const sdPctText = document.getElementById('legend-pct-sd');
+        const aiPctText = document.getElementById('legend-pct-aiml');
+        const devPctText = document.getElementById('legend-pct-dev');
+
+        if (hasData) {
+            const totalCount = dsaCount + sdCount + aiCount + devCount;
+            if (dsaPctText) dsaPctText.textContent = `${Math.round(dsaCount / totalCount * 100)}%`;
+            if (sdPctText) sdPctText.textContent = `${Math.round(sdCount / totalCount * 100)}%`;
+            if (aiPctText) aiPctText.textContent = `${Math.round(aiCount / totalCount * 100)}%`;
+            if (devPctText) devPctText.textContent = `${Math.round(devCount / totalCount * 100)}%`;
+        } else {
+            if (dsaPctText) dsaPctText.textContent = `0%`;
+            if (sdPctText) sdPctText.textContent = `0%`;
+            if (aiPctText) aiPctText.textContent = `0%`;
+            if (devPctText) devPctText.textContent = `0%`;
+        }
 
         charts.dashDist = new Chart(ctx, {
             type: 'doughnut',
@@ -1273,13 +1289,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const diffCtx = document.getElementById('analyticsDifficultyChart');
         if (diffCtx) {
             if (charts.analyticsDiff) charts.analyticsDiff.destroy();
+            const hasDsaData = solved.length > 0;
+            const diffData = hasDsaData ? [counts.Easy, counts.Medium, counts.Hard] : [1, 1, 1];
+            const diffColors = hasDsaData ? ['#10b981', '#f59e0b', '#ef4444'] : ['#e5e7eb', '#e5e7eb', '#e5e7eb'];
             charts.analyticsDiff = new Chart(diffCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Easy', 'Medium', 'Hard'],
                     datasets: [{
-                        data: [Math.max(1, counts.Easy), Math.max(1, counts.Medium), Math.max(1, counts.Hard)],
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        data: diffData,
+                        backgroundColor: diffColors,
                         borderWidth: 0,
                         cutout: '70%'
                     }]
@@ -1299,7 +1318,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels: topTopics.length > 0 ? topTopics.map(t=>t[0]) : ['DSA', 'System Design', 'ML', 'Web Dev', 'Misc'],
                     datasets: [{
                         label: 'Mastery Level',
-                        data: topTopics.length > 0 ? topTopics.map(t=>t[1]) : [5, 3, 2, 4, 1],
+                        data: topTopics.length > 0 ? topTopics.map(t=>t[1]) : [0, 0, 0, 0, 0],
                         backgroundColor: '#2563eb',
                         borderRadius: 6
                     }]
