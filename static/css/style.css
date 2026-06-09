@@ -1699,3 +1699,83 @@ body {
 .roadmap-phase-icon {
   font-size: 1rem;
 }
+
+/* ── SAAS ANALYTICS SYSTEM EXTRA STYLING ── */
+.heatmap-block {
+  height: 22px;
+  border-radius: 4px;
+  position: relative;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.heatmap-block:hover {
+  transform: scale(1.25);
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+}
+
+.heatmap-block::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 135%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 999;
+}
+
+.heatmap-block:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+#analytics-audit-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+#analytics-audit-panel::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(to bottom, var(--primary), #4f46e5);
+}
+
+/* Dynamic glow elements for high readiness score */
+.ready-glow {
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(37, 99, 235, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.35); }
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

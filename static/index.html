@@ -697,29 +697,190 @@
 
             <!-- VIEW: Analytics -->
             <section id="view-analytics" class="content-view">
-                <div class="welcome-banner">
+                <div class="welcome-banner" style="margin-bottom: 24px;">
                     <div>
-                        <h1 class="welcome-title">Advanced Analytics</h1>
-                        <p class="welcome-subtitle">Deep analytics regarding your practice and learning coverage.</p>
+                        <h1 class="welcome-title" style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.8rem;">Performance & Competency Analytics</h1>
+                        <p class="welcome-subtitle">SaaS-level deep assessment of your engineering interview readiness.</p>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <select id="analytics-timeframe" class="select-clean" style="padding: 10px 16px;">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30" selected>Last 30 Days</option>
+                            <option value="all">All Time</option>
+                        </select>
+                        <button id="btn-trigger-audit" class="cta-button" style="padding: 10px 20px; font-weight: 700; background: linear-gradient(135deg, var(--primary), #4f46e5); border: none; border-radius: var(--radius-md); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s var(--smooth); box-shadow: var(--shadow-sm);">
+                            <span>Generate AI Audit ⚡</span>
+                        </button>
                     </div>
                 </div>
-                <div class="dashboard-grid">
-                    <div class="card">
-                        <h3 class="card-heading">Difficulty Distribution</h3>
-                        <div style="height:200px;">
-                            <canvas id="analyticsDifficultyChart"></canvas>
+
+                <!-- KPI METRICS ROW -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                    <!-- PRI CARD -->
+                    <div class="card" style="padding: 20px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 16px;">
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Readiness Score (PRI)</span>
+                            <strong id="analytics-pri-score" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0%</strong>
+                            <span id="analytics-pri-badge" class="pill-badge" style="font-size: 0.7rem; font-weight: 700; background: var(--primary-light); color: var(--primary); display: inline-block; margin-top: 8px; border-radius: 6px;">Novice</span>
+                        </div>
+                        <div class="circular-progress-wrap" style="width: 70px; height: 70px; flex-shrink: 0;">
+                            <svg class="progress-ring" width="70" height="70">
+                                <circle class="progress-ring-bg" stroke="#f1f5f9" stroke-width="6" fill="transparent" r="28" cx="35" cy="35"/>
+                                <circle class="progress-ring-bar" id="analytics-pri-ring" stroke="var(--primary)" stroke-dasharray="175.93" stroke-dashoffset="175.93" stroke-width="6" fill="transparent" r="28" cx="35" cy="35"/>
+                            </svg>
                         </div>
                     </div>
+
+                    <!-- SOLVED COUNTS -->
+                    <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Practice Problems</span>
+                        <strong id="analytics-dsa-count" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0</strong>
+                        <div style="display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; font-weight: 600;">
+                            <span style="color: var(--success);">Easy: <span id="analytics-dsa-easy">0</span></span>
+                            <span style="color: var(--warning);">Med: <span id="analytics-dsa-med">0</span></span>
+                            <span style="color: var(--danger);">Hard: <span id="analytics-dsa-hard">0</span></span>
+                        </div>
+                    </div>
+
+                    <!-- STUDY VELOCITY -->
+                    <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Weekly Study Velocity</span>
+                        <strong id="analytics-weekly-velocity" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0.0</strong>
+                        <span style="font-size: 0.75rem; color: var(--text-sub); margin-top: 8px; font-weight: 500;">tasks/week (active learning pace)</span>
+                    </div>
+
+                    <!-- ATS RESUME SCORE -->
+                    <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">ATS Resume Standing</span>
+                        <strong id="analytics-ats-score" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">—</strong>
+                        <span id="analytics-ats-verdict" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">No Resume Uploaded</span>
+                    </div>
+                </div>
+
+                <!-- AI COMPETENCY AUDIT PANEL -->
+                <div id="analytics-audit-panel" class="card" style="margin-bottom: 24px; padding: 24px; background: linear-gradient(to bottom right, #ffffff, #fafafa); display: block; border: 1px solid var(--border); transition: all 0.3s ease;">
+                    <!-- Empty/Initial State -->
+                    <div id="audit-state-initial" style="text-align: center; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                        <div style="font-size: 2.5rem;">🕵️‍♂️</div>
+                        <h3 style="font-family:'Outfit',sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--text-main);">AI Competency & Benchmark Audit</h3>
+                        <p style="color: var(--text-sub); font-size: 0.85rem; max-width: 460px; line-height: 1.6; margin: 0 0 8px 0;">
+                            Get a professional-grade technical assessment of your interview fitness. We compare your current DSA solving stats, roadmap coverage, and resume performance against FAANG & high-growth startup benchmarks.
+                        </p>
+                        <button id="btn-generate-audit-inner" class="cta-button" style="padding: 10px 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary), #4f46e5); border: none; border-radius: var(--radius-md); color: white; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.875rem;">
+                            <span>Generate Audit Report ⚡</span>
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="audit-state-loading" style="display: none; text-align: center; padding: 30px 0;">
+                        <div class="spinner" style="margin: 0 auto 16px auto;"></div>
+                        <h4 style="font-family:'Outfit',sans-serif; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Running System Audit</h4>
+                        <p id="audit-loading-text" style="color: var(--text-muted); font-size: 0.825rem; font-weight: 500; font-style: italic;">Parsing practice patterns...</p>
+                    </div>
+
+                    <!-- Result State -->
+                    <div id="audit-state-result" style="display: none; flex-direction: column; gap: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+                            <div>
+                                <h3 style="font-family:'Outfit',sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--text-main); margin-bottom: 4px;">Competency Audit Report</h3>
+                                <p style="color: var(--text-muted); font-size: 0.8rem; font-weight: 500;">Calculated by Groq Career Intelligence Engine • Realtime</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-sub);">Market Ready Level:</span>
+                                <span id="audit-market-level" class="pill-badge" style="background: var(--primary-light); color: var(--primary); font-weight: 800; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px;">Junior (L3)</span>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8fafc; border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 0;">
+                            <strong style="font-size: 0.85rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Auditor Verdict</strong>
+                            <p id="audit-verdict-text" style="color: var(--text-main); font-size: 0.9rem; line-height: 1.5; font-style: italic; margin: 0; font-weight: 500;">"Verdict..."</p>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex-wrap: wrap;">
+                            <!-- Gaps & Focus Areas -->
+                            <div>
+                                <h4 style="font-family:'Outfit',sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: var(--danger);">🛑</span> Technical Skill Gaps
+                                </h4>
+                                <ul id="audit-gaps-list" style="padding-left: 20px; font-size: 0.85rem; color: var(--text-sub); display: flex; flex-direction: column; gap: 8px;">
+                                    <!-- Dynamic list items -->
+                                </ul>
+                            </div>
+
+                            <!-- High-Impact Next Steps -->
+                            <div>
+                                <h4 style="font-family:'Outfit',sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: var(--success);">⚡</span> Action Plan Items
+                                </h4>
+                                <ul id="audit-actions-list" style="padding-left: 20px; font-size: 0.85rem; color: var(--text-sub); display: flex; flex-direction: column; gap: 8px;">
+                                    <!-- Dynamic list items -->
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div style="border-top: 1px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+                                Estimated Prep Timeline: <strong id="audit-weeks" style="color: var(--text-main); font-weight: 700;">—</strong> weeks to interview ready
+                            </span>
+                            <button id="btn-re-audit" style="background: transparent; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--primary); outline: none; transition: color 0.2s;">
+                                Run New Audit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISUALIZATION DASHBOARD GRID -->
+                <div class="dashboard-grid">
+                    <!-- Cumulative Growth Chart -->
+                    <div class="card" style="grid-column: span 2;">
+                        <h3 class="card-heading" style="margin-bottom: 16px;">Practice & Learning Velocity</h3>
+                        <div style="height:250px;">
+                            <canvas id="analyticsGrowthChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Competency Radar Chart -->
                     <div class="card">
-                        <h3 class="card-heading">Topic Mastery</h3>
-                        <div style="height:200px;">
+                        <h3 class="card-heading" style="margin-bottom: 16px;">Skills Alignment Radar</h3>
+                        <div style="height:250px; position: relative;">
+                            <canvas id="analyticsRadarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Consistency Heatmap Grid -->
+                    <div class="card" style="grid-column: span 2;">
+                        <h3 class="card-heading" style="margin-bottom: 12px;">30-Day Practice Heatmap</h3>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div id="analytics-heatmap-container" style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; padding: 10px 0;">
+                                <!-- Blocks generated by JS -->
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border);">
+                                <span>30 days ago</span>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span>Less</span>
+                                    <span style="width: 12px; height: 12px; border-radius: 3px; background: #e2e8f0; display: inline-block;"></span>
+                                    <span style="width: 12px; height: 12px; border-radius: 3px; background: #dbeafe; display: inline-block;"></span>
+                                    <span style="width: 12px; height: 12px; border-radius: 3px; background: #93c5fd; display: inline-block;"></span>
+                                    <span style="width: 12px; height: 12px; border-radius: 3px; background: #2563eb; display: inline-block;"></span>
+                                    <span>More</span>
+                                </div>
+                                <span>Today</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Topic Mastery Horizontal Bar Chart -->
+                    <div class="card">
+                        <h3 class="card-heading" style="margin-bottom: 16px;">Top Topic Breakdown</h3>
+                        <div style="height:180px;">
                             <canvas id="analyticsTopicChart"></canvas>
                         </div>
                     </div>
                     
-                    <div class="card" style="grid-column: span 2;">
-                        <h3 class="card-heading">🏆 Completed Milestones & Roadmaps</h3>
-                        <div id="analytics-milestones-list" style="display:flex; flex-direction:column; gap:12px;">
+                    <!-- Milestones Achievement List -->
+                    <div class="card" style="grid-column: span 3;">
+                        <h3 class="card-heading">🏆 Earned Career Milestones & Achievements</h3>
+                        <div id="analytics-milestones-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:16px;">
                             <p class="empty-state" style="margin:0; padding:10px 0; font-size:0.85rem;">No completed milestones recorded yet. Finish active roadmaps to list achievements here!</p>
                         </div>
                     </div>

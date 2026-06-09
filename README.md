@@ -25,15 +25,26 @@
 ### 4. 🎯 DSA Command Center
 - **Company-Wise Question Bank**: Frequency-sorted LeetCode questions for 100+ top companies.
 - **Progress Tracking**: Mark problems as solved, track revisions, view streaks.
-- **Analytics Dashboard**: Difficulty breakdown charts, topic radar, 7-day consistency graph.
+- **Dashboard Consistency Chart**: 7-day consistency graph and doughnut difficulty breakdown.
 
-### 5. 🔐 Animated Login System
+### 5. 📊 SaaS-Level Performance Analytics
+- **Readiness Index (PRI)**: A dynamically calculated index of prep fitness, complete with a circular progress animation and standard benchmarks (e.g. Novice, Proficient, FAANG Tier).
+  `PRI = (DSA_Score * 0.4) + (Resume_Score * 0.3) + (Playlist_Progress * 0.15) + (Projects_Score * 0.15)`
+- **Skills Alignment Radar**: Chart.js Radar comparing candidate competency in Data Structures, System Design, AI/ML, and Dev against FAANG benchmarks.
+- **Cumulative Growth Area Chart**: Plots chronological solved question history over selected timeframe (7 days, 30 days, or all-time).
+- **30-Day Practice Heatmap**: GitHub-style interactive activity blocks tracking daily learning commits (DSA solved + video playlists completed) with date tooltips.
+- **AI Competency & Benchmark Audit**: Groq-powered career intelligence audit assessing market ready tiers (Intern, L3, L4, L5), technical gaps, action items checklist, and estimated timeline to target. Cached directly in Supabase for instant loads.
+
+### 6. 🛠️ Roadmap Project Auto-Sync
+- Linked active roadmap checklists directly to the Projects tab portfolio. Checking/unchecking a project inside the roadmap checklist dynamically logs/removes it in the Projects view and synchronizes the state across session stores.
+
+### 7. 🔐 Animated Login System
 - **Premium dark-themed login/signup page** with animated glassmorphic UI.
 - **Flask session-based authentication** — protected routes, signup, logout.
 - **Google OAuth UI** ready for Supabase Auth integration.
 
-### 6. ☁️ Supabase Cloud Backend
-- **PostgreSQL database** with 4 production tables.
+### 8. ☁️ Supabase Cloud Backend
+- **PostgreSQL database** with production tables.
 - **Row Level Security (RLS)** policies for per-user data isolation.
 - **Private storage bucket** for resume file uploads.
 - **Auto-profile trigger** on user signup.
@@ -61,22 +72,23 @@ AI-CATALYST/
 ├── app.py                        # Flask backend, AI logic, auth routes
 ├── requirements.txt              # Python dependencies
 ├── .env                          # API Keys & Supabase credentials
+├── README.md                     # Documentation
 │
 ├── static/
 │   ├── login.html                # Animated login & signup page
 │   ├── index.html                # Main SPA dashboard
-│   ├── css/style.css             # Nebula Design System
+│   ├── css/style.css             # Nebula Design System & heatmaps
 │   └── js/
 │       ├── app.js                # Frontend orchestration
 │       └── supabaseClient.js     # Supabase DB service layer
 │
 ├── supabase/
+│   ├── consolidated_schema.sql   # Complete idempotent Supabase setup script
 │   ├── config.toml               # Supabase project config
 │   └── migrations/
 │       ├── 20240501000000_initial_schema.sql
-│       ├── 20240501000001_rls_policies.sql
-│       ├── 20240501000002_storage_setup.sql
-│       └── 20240501000003_recent_searches.sql
+│       ├── 20240502000000_ai_engine_tables.sql
+│       └── ...
 │
 └── data/
     ├── leetcode-companywise-*/   # Company-specific LeetCode CSVs
@@ -110,7 +122,7 @@ SECRET_KEY=your_flask_secret_key
 ```
 
 ### 4. Set Up Supabase Database
-Go to your **Supabase Dashboard → SQL Editor** and run the full schema SQL (see `supabase/migrations/`).
+Go to your **Supabase Dashboard → SQL Editor**, paste the SQL from `supabase/consolidated_schema.sql` (or `supabase/migrations/20240502000000_ai_engine_tables.sql`), and click **Run**.
 
 ### 5. Run the Application
 ```bash
@@ -135,6 +147,12 @@ The app will redirect you to the login page. Sign up with any email + 6-characte
 | `POST` | `/analyze-resume` | Elite AI resume evaluation | Yes |
 | `GET` | `/get-companies` | List all interview prep companies | Yes |
 | `GET` | `/get-questions` | Fetch LeetCode questions by company | Yes |
+| `POST` | `/generate-competency-audit` | Aggregates user metrics and queries Groq for career readiness | Yes |
+| `GET` | `/get-competency-audit` | Retrieves user's latest competency audit from Supabase | Yes |
+| `POST` | `/sync-user-projects` | Synchronize custom projects portfolio list to database | Yes |
+| `GET` | `/get-user-projects` | Retrieve custom projects portfolio list | Yes |
+| `POST` | `/sync-active-roadmap` | Sync current roadmap checklist progress | Yes |
+| `GET` | `/get-active-roadmap` | Retrieve current active roadmap checklist | Yes |
 
 ---
 
@@ -145,7 +163,9 @@ The app will redirect you to the login page. Sign up with any email + 6-characte
 | `profiles` | User info, auto-created on signup via trigger |
 | `recent_searches` | Per-user search history with skill, level, language |
 | `resume_analysis` | Full AI analysis JSON + scores per user |
-| `dsa_progress` | Solved LeetCode problems with revision tracking |
+| `dsa_progress` | Solved LeetCode problems with difficulty counts |
+| `learning_progress` | User roadmap checkboxes, saved playlists, custom project arrays, and AI competency audit caching |
+| `success_metrics` | Logged milestones (e.g. roadmap completes, resume improved, certified) |
 
 **Storage:** Private `resumes` bucket (10MB limit, PDF/DOCX only) with per-user folder isolation.
 

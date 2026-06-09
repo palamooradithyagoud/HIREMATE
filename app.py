@@ -1448,6 +1448,190 @@ def get_milestones():
         print(f"[MILESTONES] Get failed: {e}")
         return jsonify([])
 
+@app.route("/generate-competency-audit", methods=["POST"])
+def generate_competency_audit():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    sb = get_sb()
+    if not sb:
+        return jsonify({"error": "Database connection not active"}), 500
+        
+    try:
+        user_id = session["user_id"]
+        
+        # 1. Fetch DSA progress
+        dsa_data = {"total_solved": 0, "easy_solved": 0, "medium_solved": 0, "hard_solved": 0, "weak_topics": []}
+        try:
+            dsa_res = sb.table("dsa_progress").select("*").eq("user_id", user_id).limit(1).execute()
+            if dsa_res.data:
+                dsa_data = dsa_res.data[0]
+        except Exception as ex:
+            print(f"[AUDIT] DSA lookup fail: {ex}")
+            
+        # 2. Fetch Latest Resume Analysis
+        resume_data = {}
+        try:
+            resume_res = sb.table("resume_analysis").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(1).execute()
+            if resume_res.data:
+                resume_data = resume_res.data[0]
+        except Exception as ex:
+            print(f"[AUDIT] Resume lookup fail: {ex}")
+            
+        # 3. Fetch Learning Progress (playlists, roadmap, custom projects)
+        playlists_pct = 0.0
+        playlists_count = 0
+        try:
+            playlists_res = sb.table("learning_progress").select("*").eq("session_id", user_id).eq("skill_name", "saved_playlists").limit(1).execute()
+            if playlists_res.data:
+                playlists_count = len(playlists_res.data[0].get("completed_steps", []))
+                playlists_pct = float(playlists_res.data[0].get("completion_pct", 0.0))
+        except Exception as ex:
+            print(f"[AUDIT] Playlists lookup fail: {ex}")
+            
+        roadmap_name = "None"
+        roadmap_pct = 0.0
+        try:
+            roadmap_res = sb.table("learning_progress").select("*").eq("session_id", user_id).eq("skill_name", "active_roadmap").limit(1).execute()
+            if roadmap_res.data:
+                roadmap_name = (roadmap_res.data[0].get("completed_steps") or {}).get("skill", "None")
+                roadmap_pct = float(roadmap_res.data[0].get("completion_pct", 0.0))
+        except Exception as ex:
+            print(f"[AUDIT] Roadmap lookup fail: {ex}")
+            
+        projects_count = 0
+        try:
+            projects_res = sb.table("learning_progress").select("*").eq("session_id", user_id).eq("skill_name", "user_projects").limit(1).execute()
+            if projects_res.data:
+                projects_count = len(projects_res.data[0].get("completed_steps", []))
+        except Exception as ex:
+            print(f"[AUDIT] Projects lookup fail: {ex}")
+            
+        # 4. Fetch Milestones
+        milestones = []
+        try:
+            milestones_res = sb.table("success_metrics").select("*").eq("session_id", user_id).execute()
+            milestones = [m.get("outcome_detail") for m in (milestones_res.data or [])]
+        except Exception as ex:
+            print(f"[AUDIT] Milestones lookup fail: {ex}")
+        
+        # Prepare context for Groq
+        profile_context = {
+            "dsa": {
+                "solved": dsa_data.get("total_solved", 0),
+                "easy": dsa_data.get("easy_solved", 0),
+                "medium": dsa_data.get("medium_solved", 0),
+                "hard": dsa_data.get("hard_solved", 0),
+                "weak_topics": dsa_data.get("weak_topics") or []
+            },
+            "resume": {
+                "ats_score": resume_data.get("ats_score", 0),
+                "role": resume_data.get("ai_feedback", {}).get("role", "Software Engineer") if isinstance(resume_data.get("ai_feedback"), dict) else "Software Engineer"
+            },
+            "learning": {
+                "playlists_saved": playlists_count,
+                "playlists_overall_completion_pct": playlists_pct,
+                "active_roadmap": roadmap_name,
+                "roadmap_completion_pct": roadmap_pct,
+                "custom_projects_logged": projects_count
+            },
+            "milestones": milestones
+        }
+
+        # Prompt Groq to generate a professional career competency audit
+        prompt = f"""
+You are a top-tier SaaS Career Intelligence & Technical Assessment engine.
+Analyze the following developer prep profile data and produce a structured, high-value competency audit.
+
+DEVELOPER PREP PROFILE DATA:
+{json.dumps(profile_context, indent=2)}
+
+You are auditing this candidate against elite global tech standards (e.g., FAANG, tier-1 tech startups, high-end unicorns).
+Evaluate them critically based on their DSA portfolio, learning playlist history, custom projects count, and resume ATS score.
+
+OUTPUT STRICTLY A VALID JSON OBJECT WITH THIS STRUCTURE:
+{{
+  "market_ready_level": "Junior (L3) / Mid-level (L4) / Senior (L5) / Intern",
+  "readiness_verdict": "A blunt, professional 2-sentence summary of where they currently stand and their likelihood of passing top-tier interviews.",
+  "scores": {{
+    "dsa_standing": number (1-100, calculate logically: Easy=1pt, Med=4pt, Hard=10pt, target 500 pts total),
+    "learning_depth": number (1-100, based on playlist completion and roadmap progress),
+    "project_portfolio": number (1-100, based on custom projects logged and roadmap milestones),
+    "ats_readiness": number (1-100, based directly on resume ATS score, default to 30 if no resume)
+  }},
+  "technical_gaps": [
+    "List 3-4 specific technical or practical focus areas they need to fix based on their weak topics and missing items."
+  ],
+  "action_items": [
+    "List 3-4 concrete, highly actionable next steps (e.g., 'Solve 15 more medium recursion problems', 'Upload a tailored resume to improve ATS score')."
+  ],
+  "estimated_weeks_to_target": number,
+  "competency_breakdown": [
+    {{ "skill": "Data Structures & Alg.", "candidate_score": number, "benchmark_score": 85 }},
+    {{ "skill": "System Design", "candidate_score": number, "benchmark_score": 75 }},
+    {{ "skill": "Project Engineering", "candidate_score": number, "benchmark_score": 80 }},
+    {{ "skill": "Market Alignment (Resume)", "candidate_score": number, "benchmark_score": 85 }}
+  ]
+}}
+
+STRICT RULES:
+- Do NOT output any markdown, HTML, code fences, or explanations. Respond with the raw JSON object ONLY.
+- Candidate scores must be integers between 5 and 100.
+- If they have 0 solved questions, 0 custom projects, and 0 resume score, their competency scores must be very low. Be realistic, not overly encouraging.
+- The estimated weeks to target should be a realistic integer based on how far behind they are (e.g. if DSA score is low, they need 12-24 weeks).
+"""
+        
+        client = Groq()
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a professional SaaS tech career audit engine. Return JSON only. Be highly precise and critical."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.2,
+            response_format={"type": "json_object"}
+        )
+        
+        audit_res = json.loads(completion.choices[0].message.content.strip())
+        
+        # Save competency audit to Supabase
+        try:
+            sb.table("learning_progress").upsert({
+                "session_id": user_id,
+                "skill_name": "competency_audit",
+                "completed_steps": audit_res,
+                "completion_pct": float(audit_res.get("scores", {}).get("dsa_standing", 0))
+            }, on_conflict="session_id, skill_name").execute()
+        except Exception as sb_err:
+            print(f"[AUDIT] Save to Supabase failed: {sb_err}")
+
+        return jsonify(audit_res)
+        
+    except Exception as e:
+        print(f"[AUDIT] Generation failed: {e}")
+        return jsonify({"error": "Failed to generate competency audit. Ensure you are logged in and database connection is active."}), 500
+
+@app.route("/get-competency-audit", methods=["GET"])
+def get_competency_audit():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify(None)
+    sb = get_sb()
+    if not sb:
+        return jsonify(None)
+    try:
+        res = sb.table("learning_progress")\
+                .select("completed_steps")\
+                .eq("session_id", session["user_id"])\
+                .eq("skill_name", "competency_audit")\
+                .limit(1)\
+                .execute()
+        if res.data:
+            return jsonify(res.data[0].get("completed_steps"))
+        return jsonify(None)
+    except Exception as e:
+        print(f"[AUDIT] Get failed: {e}")
+        return jsonify(None)
+
 @app.route("/")
 def index():
     if not session.get("logged_in"):

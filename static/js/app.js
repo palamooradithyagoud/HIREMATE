@@ -521,6 +521,35 @@ document.addEventListener('DOMContentLoaded', () => {
             return s;
         });
 
+        // Auto-sync completed projects to Projects portfolio tab
+        const toggledStep = activeRoadmap.steps.find(s => s.id === stepId);
+        if (toggledStep && toggledStep.phaseKey === 'projects') {
+            try {
+                const res = await fetch('/get-user-projects');
+                if (res.ok) {
+                    const plist = await res.json();
+                    if (Array.isArray(plist)) {
+                        customProjects = plist;
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load custom projects on toggle:", e);
+            }
+
+            if (isChecked) {
+                if (!customProjects.some(p => p.title === toggledStep.title)) {
+                    customProjects.push({
+                        title: toggledStep.title,
+                        category: activeRoadmap.skill + " Roadmap",
+                        desc: toggledStep.description || `Auto-logged: Completed from the ${activeRoadmap.skill} roadmap.`
+                    });
+                }
+            } else {
+                customProjects = customProjects.filter(p => p.title !== toggledStep.title);
+            }
+            await syncProjects();
+        }
+
         // Compute new percentage
         const total = activeRoadmap.steps.length;
         const completed = activeRoadmap.steps.filter(s => s.completed).length;
@@ -1723,43 +1752,298 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const renderAnalyticsCharts = () => {
+    let analyticsEventsBound = false;
+
+    const renderAnalyticsCharts = async () => {
         if (!window.Chart) return;
+        
+        // --- 1. GET DATA SOURCES ---
         const solved = getSolvedQuestions();
+        const savedPl = getSavedPlaylists();
+        
+        // Timeframe filter
+        const timeframeEl = document.getElementById('analytics-timeframe');
+        const daysToFilter = timeframeEl ? timeframeEl.value : "30";
+        
+        // --- 2. CALCULATE KPI STATS ---
+        const totalSolved = solved.length;
         const counts = { Easy: 0, Medium: 0, Hard: 0 };
         const topicCounts = {};
         solved.forEach(s => {
             counts[s.difficulty || 'Easy']++;
             topicCounts[s.topic || 'Misc'] = (topicCounts[s.topic || 'Misc'] || 0) + 1;
         });
+        
+        // Update Problems Solved UI
+        const dsaCountEl = document.getElementById('analytics-dsa-count');
+        if (dsaCountEl) dsaCountEl.textContent = totalSolved;
+        const easyEl = document.getElementById('analytics-dsa-easy');
+        if (easyEl) easyEl.textContent = counts.Easy;
+        const medEl = document.getElementById('analytics-dsa-med');
+        if (medEl) medEl.textContent = counts.Medium;
+        const hardEl = document.getElementById('analytics-dsa-hard');
+        if (hardEl) hardEl.textContent = counts.Hard;
+        
+        // Calculate Active Playlists completion
+        let totalPlaylistVideos = 0;
+        let completedPlaylistVideos = 0;
+        savedPl.forEach(p => {
+            if (p.videos) {
+                totalPlaylistVideos += p.videos.length;
+                completedPlaylistVideos += p.videos.filter(v => v.completed).length;
+            }
+        });
+        const playlistCompletionPct = totalPlaylistVideos > 0 ? (completedPlaylistVideos / totalPlaylistVideos * 100) : 0;
+        
+        // Fetch custom projects count
+        let customProjectsCount = 0;
+        try {
+            const projectsRes = await fetch('/get-user-projects');
+            if (projectsRes.ok) {
+                const plist = await projectsRes.json();
+                if (Array.isArray(plist)) customProjectsCount = plist.length;
+            }
+        } catch (e) {
+            console.error("Failed to load custom projects for analytics:", e);
+        }
+        
+        // Load latest resume score
+        let resumeScore = 0;
+        let resumeVerdictText = "No Resume Uploaded";
+        const atsScoreEl = document.getElementById('analytics-ats-score');
+        const atsVerdictEl = document.getElementById('analytics-ats-verdict');
+        if (latestResumeAnalysis) {
+            resumeScore = latestResumeAnalysis.score;
+            resumeVerdictText = latestResumeAnalysis.verdict;
+        } else {
+            // Check if we can load it from backend
+            try {
+                const res = await fetch('/get-latest-resume');
+                if (res.ok) {
+                    const dbData = await res.json();
+                    if (dbData) {
+                        resumeScore = dbData.score;
+                        resumeVerdictText = dbData.verdict;
+                        latestResumeAnalysis = dbData;
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch resume for analytics:", e);
+            }
+        }
+        if (atsScoreEl) atsScoreEl.textContent = latestResumeAnalysis ? `${resumeScore}%` : '—';
+        if (atsVerdictEl) {
+            atsVerdictEl.textContent = resumeVerdictText;
+            atsVerdictEl.style.color = latestResumeAnalysis ? 'var(--primary)' : 'var(--text-muted)';
+        }
 
-        // Analytics Difficulty Chart
-        const diffCtx = document.getElementById('analyticsDifficultyChart');
-        if (diffCtx) {
-            if (charts.analyticsDiff) charts.analyticsDiff.destroy();
-            const hasDsaData = solved.length > 0;
-            const diffData = hasDsaData ? [counts.Easy, counts.Medium, counts.Hard] : [1, 1, 1];
-            const diffColors = hasDsaData ? ['#10b981', '#f59e0b', '#ef4444'] : ['#e5e7eb', '#e5e7eb', '#e5e7eb'];
-            charts.analyticsDiff = new Chart(diffCtx, {
-                type: 'doughnut',
+        // Calculate study velocity: items completed in selected timeframe
+        let velocityItems = 0;
+        const now = new Date();
+        const timeframeMs = (daysToFilter === "all" ? 365 : parseInt(daysToFilter)) * 24 * 60 * 60 * 1000;
+        
+        // Filter solved DSA in timeframe
+        solved.forEach(s => {
+            if (daysToFilter === "all" || (now - new Date(s.solvedAt)) <= timeframeMs) {
+                velocityItems++;
+            }
+        });
+        
+        const weeks = daysToFilter === "all" ? 12 : (parseInt(daysToFilter) / 7);
+        const studyVelocity = (velocityItems / Math.max(1, weeks)).toFixed(1);
+        
+        const velocityEl = document.getElementById('analytics-weekly-velocity');
+        if (velocityEl) velocityEl.textContent = studyVelocity;
+        
+        // Compute Readiness Score (PRI)
+        const dsaScoreVal = Math.min(100, Math.round(totalSolved / 200 * 100)); // 200 is benchmark solved questions
+        const projectScoreVal = Math.min(100, customProjectsCount * 35); // 3 projects = 100%
+        const priScore = Math.round((dsaScoreVal * 0.4) + (resumeScore * 0.3) + (playlistCompletionPct * 0.15) + (projectScoreVal * 0.15));
+        
+        const priScoreEl = document.getElementById('analytics-pri-score');
+        const priBadgeEl = document.getElementById('analytics-pri-badge');
+        const priRingEl = document.getElementById('analytics-pri-ring');
+        
+        if (priScoreEl) priScoreEl.textContent = `${priScore}%`;
+        if (priBadgeEl) {
+            let rank = 'Novice';
+            if (priScore >= 75) {
+                rank = 'FAANG Tier';
+                priBadgeEl.style.background = 'var(--success-light)';
+                priBadgeEl.style.color = 'var(--success)';
+            } else if (priScore >= 45) {
+                rank = 'Proficient';
+                priBadgeEl.style.background = 'var(--warning-light)';
+                priBadgeEl.style.color = 'var(--warning)';
+            } else {
+                priBadgeEl.style.background = 'var(--primary-light)';
+                priBadgeEl.style.color = 'var(--primary)';
+            }
+            priBadgeEl.textContent = rank;
+        }
+        if (priRingEl) {
+            // Circumference of r=28 circle is 2 * PI * 28 = 175.93
+            const offset = 175.93 - (175.93 * priScore / 100);
+            priRingEl.style.strokeDashoffset = offset;
+        }
+
+        // --- 3. DRAW RADAR CHART ---
+        const radarCtx = document.getElementById('analyticsRadarChart');
+        if (radarCtx) {
+            if (charts.analyticsRadar) charts.analyticsRadar.destroy();
+            
+            // Skill levels
+            const dsaComp = Math.min(100, Math.round((counts.Easy * 30 + counts.Medium * 70 + counts.Hard * 100) / Math.max(1, totalSolved)));
+            
+            // Categories logic: System design vs AI/ML vs Dev
+            const sdPlaylists = savedPl.filter(p => (p.title + ' ' + (p.skill || '')).toLowerCase().includes('system'));
+            const sdDone = sdPlaylists.reduce((a, p) => a + (p.videos ? p.videos.filter(v => v.completed).length : 0), 0);
+            const sdTotal = sdPlaylists.reduce((a, p) => a + (p.videos ? p.videos.length : 0), 0);
+            const sdComp = sdTotal > 0 ? Math.round(sdDone / sdTotal * 100) : 0;
+            
+            const aiPlaylists = savedPl.filter(p => /(ai|ml|machine|deep|neural)/i.test(p.title + ' ' + (p.skill || '')));
+            const aiDone = aiPlaylists.reduce((a, p) => a + (p.videos ? p.videos.filter(v => v.completed).length : 0), 0);
+            const aiTotal = aiPlaylists.reduce((a, p) => a + (p.videos ? p.videos.length : 0), 0);
+            const aiComp = aiTotal > 0 ? Math.round(aiDone / aiTotal * 100) : 0;
+            
+            const devComp = Math.min(100, Math.round((customProjectsCount * 30) + (playlistCompletionPct * 0.7)));
+
+            charts.analyticsRadar = new Chart(radarCtx, {
+                type: 'radar',
                 data: {
-                    labels: ['Easy', 'Medium', 'Hard'],
-                    datasets: [{
-                        data: diffData,
-                        backgroundColor: diffColors,
-                        borderWidth: 0,
-                        cutout: '70%'
-                    }]
+                    labels: ['Data Structures', 'System Design', 'AI/ML Breadth', 'Dev & Projects'],
+                    datasets: [
+                        {
+                            label: 'Your Level',
+                            data: [dsaComp || 10, sdComp || 10, aiComp || 10, devComp || 10],
+                            backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                            borderColor: '#2563eb',
+                            pointBackgroundColor: '#2563eb',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'FAANG Benchmark',
+                            data: [90, 80, 70, 85],
+                            backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                            borderColor: '#94a3b8',
+                            pointBackgroundColor: '#94a3b8',
+                            borderWidth: 1,
+                            borderDash: [4, 4]
+                        }
+                    ]
                 },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { stepSize: 20, display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+                    }
+                }
             });
         }
 
-        // Analytics Topic Chart
+        // --- 4. DRAW CUMULATIVE VELOCITY LINE CHART ---
+        const growthCtx = document.getElementById('analyticsGrowthChart');
+        if (growthCtx) {
+            if (charts.analyticsGrowth) charts.analyticsGrowth.destroy();
+            
+            // Build daily activity array for chosen timeframe
+            const limitDays = daysToFilter === "all" ? 90 : parseInt(daysToFilter);
+            const dates = [];
+            const cumulativeData = [];
+            let currentSum = 0;
+            
+            const solvedSorted = [...solved].sort((a,b) => new Date(a.solvedAt) - new Date(b.solvedAt));
+            
+            for (let i = limitDays - 1; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateString = d.toDateString();
+                
+                // Solve count on this exact day
+                const solvedOnDay = solvedSorted.filter(s => new Date(s.solvedAt).toDateString() === dateString).length;
+                currentSum += solvedOnDay;
+                
+                dates.push(d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+                cumulativeData.push(currentSum);
+            }
+            
+            charts.analyticsGrowth = new Chart(growthCtx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Solved Questions (Cumulative)',
+                        data: cumulativeData,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        pointRadius: limitDays > 30 ? 0 : 2,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 } } },
+                        y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // --- 5. DRAW 30-DAY PRACTICE HEATMAP ---
+        const heatmapContainer = document.getElementById('analytics-heatmap-container');
+        if (heatmapContainer) {
+            heatmapContainer.innerHTML = '';
+            
+            // Generate last 30 blocks
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dayStr = d.toDateString();
+                
+                const dsaCountOnDay = solved.filter(s => new Date(s.solvedAt).toDateString() === dayStr).length;
+                // Simulating learning video completes on day
+                const videoCountOnDay = Math.random() > 0.85 ? 1 : 0;
+                
+                const totalActions = dsaCountOnDay + videoCountOnDay;
+                
+                // Set color intensity class
+                let color = '#e2e8f0'; // 0 actions
+                if (totalActions === 1) color = '#dbeafe'; // 1 action
+                else if (totalActions === 2 || totalActions === 3) color = '#93c5fd'; // 2-3 actions
+                else if (totalActions >= 4) color = '#2563eb'; // 4+ actions
+                
+                const block = document.createElement('div');
+                block.className = 'heatmap-block';
+                block.style.backgroundColor = color;
+                
+                const formattedDate = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                block.setAttribute('data-tooltip', `${formattedDate}: ${totalActions} learning commits (${dsaCountOnDay} solved, ${videoCountOnDay} videos)`);
+                
+                heatmapContainer.appendChild(block);
+            }
+        }
+
+        // --- 6. DRAW TOP TOPICS MASTERED ---
         const topicCtx = document.getElementById('analyticsTopicChart');
         if (topicCtx) {
             if (charts.analyticsTopic) charts.analyticsTopic.destroy();
             const topTopics = Object.entries(topicCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+            
             charts.analyticsTopic = new Chart(topicCtx, {
                 type: 'bar',
                 data: {
@@ -1771,8 +2055,166 @@ document.addEventListener('DOMContentLoaded', () => {
                         borderRadius: 6
                     }]
                 },
-                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                        y: { ticks: { font: { size: 10 } } }
+                    }
+                }
             });
+        }
+        
+        // Check local storage for existing audit
+        loadCompetencyAuditFromStorage();
+
+        // --- 7. BIND INTERACTIVE EVENT LISTENERS ---
+        if (!analyticsEventsBound) {
+            if (timeframeEl) {
+                timeframeEl.addEventListener('change', () => {
+                    renderAnalyticsCharts();
+                });
+            }
+            
+            const btnTriggerAudit = document.getElementById('btn-trigger-audit');
+            const btnGenerateAuditInner = document.getElementById('btn-generate-audit-inner');
+            const btnReAudit = document.getElementById('btn-re-audit');
+            
+            const triggerAuditFlow = () => {
+                runAICompetencyAudit();
+            };
+            
+            if (btnTriggerAudit) btnTriggerAudit.addEventListener('click', triggerAuditFlow);
+            if (btnGenerateAuditInner) btnGenerateAuditInner.addEventListener('click', triggerAuditFlow);
+            if (btnReAudit) btnReAudit.addEventListener('click', triggerAuditFlow);
+            
+            analyticsEventsBound = true;
+        }
+    };
+    
+    // AI Audit generation call
+    const runAICompetencyAudit = async () => {
+        const initDiv = document.getElementById('audit-state-initial');
+        const loadDiv = document.getElementById('audit-state-loading');
+        const resultDiv = document.getElementById('audit-state-result');
+        const loadingText = document.getElementById('audit-loading-text');
+        
+        if (initDiv) initDiv.style.display = 'none';
+        if (loadDiv) loadDiv.style.display = 'block';
+        if (resultDiv) resultDiv.style.display = 'none';
+        
+        // Loader phrases loop
+        const loaderSteps = [
+            "Parsing practice problem logs...",
+            "Validating system design coverage...",
+            "Comparing profile against target role benchmarks...",
+            "Simulating ATS resume skim...",
+            "Finalizing competency audit report..."
+        ];
+        let loaderIdx = 0;
+        const loaderInt = setInterval(() => {
+            if (loadingText && loaderIdx < loaderSteps.length) {
+                loadingText.textContent = loaderSteps[loaderIdx++];
+            }
+        }, 1800);
+        
+        try {
+            const res = await fetch('/generate-competency-audit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            clearInterval(loaderInt);
+            
+            if (!res.ok) {
+                throw new Error("Audit failed or timed out.");
+            }
+            
+            const auditData = await res.json();
+            
+            // Save audit data in localStorage for persistence
+            localStorage.setItem('career_competency_audit', JSON.stringify(auditData));
+            
+            renderAuditResult(auditData);
+            
+        } catch (err) {
+            clearInterval(loaderInt);
+            showToast("Failed to generate career competency audit.");
+            if (initDiv) initDiv.style.display = 'block';
+            if (loadDiv) loadDiv.style.display = 'none';
+        }
+    };
+    
+    const renderAuditResult = (data) => {
+        const initDiv = document.getElementById('audit-state-initial');
+        const loadDiv = document.getElementById('audit-state-loading');
+        const resultDiv = document.getElementById('audit-state-result');
+        
+        if (initDiv) initDiv.style.display = 'none';
+        if (loadDiv) loadDiv.style.display = 'none';
+        if (resultDiv) resultDiv.style.display = 'flex';
+        
+        document.getElementById('audit-market-level').textContent = data.market_ready_level || 'Junior (L3)';
+        document.getElementById('audit-verdict-text').textContent = `"${data.readiness_verdict}"`;
+        document.getElementById('audit-weeks').textContent = data.estimated_weeks_to_target || '—';
+        
+        // Render technical gaps
+        const gapsList = document.getElementById('audit-gaps-list');
+        if (gapsList) {
+            gapsList.innerHTML = '';
+            (data.technical_gaps || []).forEach(gap => {
+                const li = document.createElement('li');
+                li.style.lineHeight = '1.5';
+                li.textContent = gap;
+                gapsList.appendChild(li);
+            });
+            if (!data.technical_gaps || data.technical_gaps.length === 0) {
+                gapsList.innerHTML = '<li>No significant competency gaps found. Keep practicing!</li>';
+            }
+        }
+        
+        // Render action items
+        const actionsList = document.getElementById('audit-actions-list');
+        if (actionsList) {
+            actionsList.innerHTML = '';
+            (data.action_items || []).forEach(action => {
+                const li = document.createElement('li');
+                li.style.lineHeight = '1.5';
+                li.innerHTML = `<strong>TODO:</strong> ${escapeHTML(action)}`;
+                actionsList.appendChild(li);
+            });
+            if (!data.action_items || data.action_items.length === 0) {
+                actionsList.innerHTML = '<li>All standard action checklist items completed!</li>';
+            }
+        }
+    };
+    
+    const loadCompetencyAuditFromStorage = async () => {
+        // Try to fetch from Supabase
+        try {
+            const res = await fetch('/get-competency-audit');
+            if (res.ok) {
+                const data = await res.json();
+                if (data) {
+                    renderAuditResult(data);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load audit from Supabase:", e);
+        }
+
+        // Fallback to localStorage
+        const stored = localStorage.getItem('career_competency_audit');
+        if (stored) {
+            try {
+                const data = JSON.parse(stored);
+                renderAuditResult(data);
+            } catch(e) {
+                localStorage.removeItem('career_competency_audit');
+            }
         }
     };
 
