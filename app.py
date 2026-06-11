@@ -1632,6 +1632,244 @@ def get_competency_audit():
         print(f"[AUDIT] Get failed: {e}")
         return jsonify(None)
 
+# ──────────────────────────────────────────────
+# Mock Interview System Endpoints
+# ──────────────────────────────────────────────
+
+@app.route("/generate-mock-interview", methods=["POST"])
+def generate_mock_interview():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    body = request.get_json(silent=True) or {}
+    role = (body.get("role") or "Software Engineer").strip()
+    interview_type = (body.get("interview_type") or "Coding & DSA").strip()
+    benchmark = (body.get("benchmark") or "Average Company").strip()
+    
+    session_id = str(uuid.uuid4())
+    
+    prompt = f"""
+You are a senior tech interviewer from a {benchmark} company.
+Your task is to generate the first, challenging mock interview question for a candidate interviewing for a {role} position.
+The round type is: {interview_type}.
+
+STRICT RULES:
+1. Present a realistic, challenging, and clear scenario/problem suitable for {benchmark} standard.
+2. Do not solve the problem or provide sample solutions.
+3. Welcome the candidate briefly, state the scenario, and ask them to respond.
+4. Respond ONLY with a valid JSON object. No markdown formatting, no backticks.
+5. The JSON structure MUST be exactly:
+{{
+  "question": "The question text here",
+  "interviewer_name": "A fictional interviewer name"
+}}
+"""
+    try:
+        client = Groq()
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a professional tech interviewer. You respond only with valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        
+        result_text = completion.choices[0].message.content.strip()
+        result_data = json.loads(result_text)
+        result_data["session_id"] = session_id
+        return jsonify(result_data)
+        
+    except Exception as e:
+        print(f"[INTERVIEW] Generation failed: {e}")
+        return jsonify({"error": "Failed to generate mock interview question. Please try again."}), 500
+
+
+@app.route("/respond-mock-interview", methods=["POST"])
+def respond_mock_interview():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    body = request.get_json(silent=True) or {}
+    role = (body.get("role") or "Software Engineer").strip()
+    interview_type = (body.get("interview_type") or "Coding & DSA").strip()
+    benchmark = (body.get("benchmark") or "Average Company").strip()
+    chat_history = body.get("chat_history") or []
+    user_response = (body.get("user_response") or "").strip()
+    
+    if not user_response:
+        return jsonify({"error": "Response cannot be empty"}), 400
+        
+    # Count how many candidate responses we have in history
+    candidate_responses_count = sum(1 for msg in chat_history if msg.get("sender") == "candidate")
+    
+    # 3 candidate answers limit
+    if candidate_responses_count >= 2:
+        return jsonify({
+            "is_completed": True,
+            "question": "Thank you. That completes all our interview questions. Please click 'Submit for Evaluation' to generate your detailed SaaS report!"
+        })
+        
+    # Format the transcript for the LLM
+    formatted_transcript = ""
+    for msg in chat_history:
+        sender = "Interviewer" if msg.get("sender") == "interviewer" else "Candidate"
+        formatted_transcript += f"{sender}: {msg.get('text')}\n"
+    formatted_transcript += f"Candidate: {user_response}\n"
+    
+    prompt = f"""
+You are a senior tech interviewer from a {benchmark} company.
+You are conducting a {interview_type} mock interview for a {role} position.
+Here is the transcript of the interview so far:
+{formatted_transcript}
+
+Ask a relevant follow-up question based on the candidate's last response: "{user_response}"
+- If it is Coding & DSA: ask about edge cases, complexity (time/space), optimization, or dry-running.
+- If it is System Design: ask about bottlenecks, data consistency, scaling, or failure recovery.
+- If it is Behavioral: probe deeper into their action/results, conflict resolution, or learnings (following the STAR method).
+
+Keep your follow-up concise, direct, and professional. Do not evaluate their response yet.
+Respond ONLY with a valid JSON object. No markdown formatting, no backticks.
+The JSON structure MUST be exactly:
+{{
+  "question": "Your follow-up question here"
+}}
+"""
+    try:
+        client = Groq()
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a professional tech interviewer. You respond only with valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        
+        result_text = completion.choices[0].message.content.strip()
+        result_data = json.loads(result_text)
+        result_data["is_completed"] = False
+        return jsonify(result_data)
+        
+    except Exception as e:
+        print(f"[INTERVIEW] Follow-up failed: {e}")
+        return jsonify({"error": "Failed to generate follow-up question. Please try again."}), 500
+
+
+@app.route("/evaluate-mock-interview", methods=["POST"])
+def evaluate_mock_interview():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    body = request.get_json(silent=True) or {}
+    role = (body.get("role") or "Software Engineer").strip()
+    interview_type = (body.get("interview_type") or "Coding & DSA").strip()
+    benchmark = (body.get("benchmark") or "Average Company").strip()
+    chat_history = body.get("chat_history") or []
+    
+    # Format the transcript
+    formatted_transcript = ""
+    for msg in chat_history:
+        sender = "Interviewer" if msg.get("sender") == "interviewer" else "Candidate"
+        formatted_transcript += f"{sender}: {msg.get('text')}\n"
+        
+    prompt = f"""
+You are an expert tech hiring manager and recruiter with 15+ years of experience.
+Evaluate the following mock interview transcript:
+Role: {role}
+Interview Type: {interview_type}
+Company Benchmark: {benchmark}
+
+Transcript:
+{formatted_transcript}
+
+Provide a brutally honest, SaaS-level detailed scorecard and evaluation report.
+Be critical and benchmark against a {benchmark} standard.
+Respond ONLY with a valid JSON object. No markdown formatting, no backticks.
+
+The JSON structure MUST be exactly:
+{{
+  "score": number (0 to 100),
+  "verdict": "Strong Hire / Hire / Borderline / No Hire",
+  "recruiter_judgment": "Honest, critical evaluation of candidate's presence, speed, and communication.",
+  "categories": [
+    {{ "category": "Technical Accuracy", "score": number (0-100), "feedback": "reasoning" }},
+    {{ "category": "Problem Solving & Logic", "score": number (0-100), "feedback": "reasoning" }},
+    {{ "category": "Communication & Articulation", "score": number (0-100), "feedback": "reasoning" }}
+  ],
+  "strengths": ["list of 2-3 specific things they did well"],
+  "weaknesses": ["list of 2-3 critical gaps/errors that would cause a rejection"],
+  "action_plan": ["list of 2-3 specific topics to revise or projects to build"],
+  "ideal_response": "A detailed, professional sample solution showing how an expert L5/L6 engineer would answer the initial question and address the follow-up topics."
+}}
+"""
+    try:
+        client = Groq()
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a professional tech hiring manager. You respond only with valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.2,
+            response_format={"type": "json_object"}
+        )
+        
+        result_text = completion.choices[0].message.content.strip()
+        report = json.loads(result_text)
+        
+        # Save to Supabase
+        sb = get_sb()
+        user_id = session.get("user_id")
+        if sb and user_id:
+            try:
+                # Weak areas as list of strings
+                weaknesses = report.get("weaknesses") or []
+                score = int(report.get("score") or 0)
+                
+                sb.table("interview_progress").insert({
+                    "user_id": user_id,
+                    "target_company": benchmark,
+                    "mock_interview_score": score,
+                    "weak_areas": weaknesses,
+                    "interview_round_type": interview_type,
+                    "preparation_status": json.dumps(report)
+                }).execute()
+                print(f"[DB] Saved mock interview to Supabase. Score={score}")
+            except Exception as sb_err:
+                print(f"[DB] Save mock interview failed: {sb_err}")
+                
+        return jsonify(report)
+        
+    except Exception as e:
+        print(f"[INTERVIEW] Evaluation failed: {e}")
+        return jsonify({"error": "Failed to evaluate mock interview. Please try again."}), 500
+
+
+@app.route("/get-interview-history", methods=["GET"])
+def get_interview_history():
+    if not session.get("logged_in") or not session.get("user_id"):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    sb = get_sb()
+    if not sb:
+        return jsonify([])
+        
+    try:
+        user_id = session.get("user_id")
+        res = sb.table("interview_progress")\
+                .select("*")\
+                .eq("user_id", user_id)\
+                .order("updated_at", desc=True)\
+                .execute()
+        return jsonify(res.data or [])
+    except Exception as e:
+        print(f"[INTERVIEW] Get history failed: {e}")
+        return jsonify([])
+
+
 @app.route("/")
 def index():
     if not session.get("logged_in"):

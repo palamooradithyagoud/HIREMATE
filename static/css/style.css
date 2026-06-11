@@ -1779,3 +1779,94 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ── MOCK INTERVIEW SIMULATOR STYLING ── */
+.interview-stage {
+  display: none;
+}
+.interview-stage.active {
+  display: block;
+}
+
+.chat-msg {
+  max-width: 80%;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-msg.interviewer {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  align-self: flex-start;
+  border-top-left-radius: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.chat-msg.candidate {
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  color: var(--text-main);
+  align-self: flex-end;
+  border-top-right-radius: 0;
+}
+
+.chat-msg-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  align-self: flex-end;
+}
+
+.interview-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  transition: all 0.2s var(--smooth);
+}
+
+.interview-history-item:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.interview-history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.interview-history-title {
+  font-weight: 700;
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+}
+
+.interview-history-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.interview-history-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.interview-history-score {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+

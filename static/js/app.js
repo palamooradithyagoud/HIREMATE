@@ -2573,6 +2573,10 @@ document.addEventListener('DOMContentLoaded', () => {
             loadProjects();
         } else if (targetViewId === 'view-settings') {
             initProfileMilestones();
+        } else if (targetViewId === 'view-interviews') {
+            loadInterviewHistory();
+            initInterviewInputs();
+            showStage('setup');
         }
     };
 
@@ -2680,6 +2684,456 @@ document.addEventListener('DOMContentLoaded', () => {
                 mentorSubmitPage.textContent = 'Get Brutal Advice ⚡';
                 mentorSubmitPage.disabled = false;
             }
+        });
+    }
+
+    // ── MOCK INTERVIEW SIMULATOR LOGIC ──────────────────────────────
+    let interviewChatHistory = [];
+    let currentInterviewMeta = {};
+    let isWaitingForAI = false;
+
+    const interviewStageSetup = document.getElementById('interview-stage-setup');
+    const interviewStageChat = document.getElementById('interview-stage-chat');
+    const interviewStageLoading = document.getElementById('interview-stage-loading');
+    const interviewStageResult = document.getElementById('interview-stage-result');
+
+    const interviewRoleInput = document.getElementById('interview-role-input');
+    const interviewTypeSelect = document.getElementById('interview-type-select');
+    const interviewBenchmarkSelect = document.getElementById('interview-benchmark-select');
+    const btnStartInterview = document.getElementById('btn-start-interview');
+
+    const interviewerNameLabel = document.getElementById('interviewer-name-label');
+    const interviewMetaLabel = document.getElementById('interview-meta-label');
+    const interviewProgressPill = document.getElementById('interview-progress-pill');
+    const btnQuitInterview = document.getElementById('btn-quit-interview');
+    const chatStream = document.getElementById('interview-chat-stream');
+    const responseInput = document.getElementById('interview-response-input');
+    const btnSubmitAnswer = document.getElementById('btn-submit-answer');
+    const charCounter = document.getElementById('char-counter');
+    const loadingStepText = document.getElementById('interview-loading-step');
+    const loadingProgressBar = document.getElementById('interview-loading-bar');
+
+    const resultRing = document.getElementById('interview-result-ring');
+    const resultScoreLabel = document.getElementById('interview-result-score-label');
+    const resultVerdict = document.getElementById('interview-result-verdict');
+    const resultCategoriesList = document.getElementById('interview-result-categories-list');
+    const resultJudgment = document.getElementById('interview-result-judgment');
+    const resultStrengths = document.getElementById('interview-result-strengths');
+    const resultWeaknesses = document.getElementById('interview-result-weaknesses');
+    const resultActionPlan = document.getElementById('interview-result-action-plan');
+    const resultIdeal = document.getElementById('interview-result-ideal');
+    const btnBackToHub = document.getElementById('btn-back-to-hub');
+    const historyList = document.getElementById('interview-history-list');
+
+    const initInterviewInputs = async () => {
+        try {
+            const res = await fetch('/get-user-session');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.logged_in) {
+                    const role = data.target_role || '';
+                    if (role && interviewRoleInput) {
+                        interviewRoleInput.value = role;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load interview user session info:", e);
+        }
+    };
+
+    const loadInterviewHistory = async () => {
+        if (!historyList) return;
+        try {
+            const res = await fetch('/get-interview-history');
+            if (!res.ok) throw new Error("Failed history fetch");
+            const data = await res.json();
+            
+            if (!data || data.length === 0) {
+                historyList.innerHTML = `<p class="empty-state" style="margin:0; padding: 20px 0;">No interviews simulated yet. Launch your first round above!</p>`;
+                return;
+            }
+            
+            historyList.innerHTML = '';
+            data.forEach(item => {
+                const dateStr = new Date(item.updated_at).toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                
+                const card = document.createElement('div');
+                card.className = 'interview-history-item';
+                card.innerHTML = `
+                    <div class="interview-history-info">
+                        <div class="interview-history-title">${escapeHTML(item.interview_round_type)} — ${escapeHTML(item.target_company)} Tier</div>
+                        <div class="interview-history-meta">Completed: ${dateStr}</div>
+                    </div>
+                    <div class="interview-history-actions">
+                        <span class="interview-history-score">${item.mock_interview_score}%</span>
+                        <button class="btn-outline-primary btn-view-report" style="padding:6px 12px; font-size:0.75rem; border-radius:6px;">View Report</button>
+                    </div>
+                `;
+                
+                card.querySelector('.btn-view-report').addEventListener('click', () => {
+                    let reportObj = null;
+                    try {
+                        reportObj = typeof item.preparation_status === 'string' ? JSON.parse(item.preparation_status) : item.preparation_status;
+                    } catch(e) {
+                        console.error("Parse report JSON failed:", e);
+                    }
+                    if (reportObj) {
+                        renderScorecard(reportObj);
+                    } else {
+                        showToast("Failed to load audit details.");
+                    }
+                });
+                
+                historyList.appendChild(card);
+            });
+            
+        } catch (err) {
+            console.error("Failed to load history list:", err);
+            historyList.innerHTML = `<p class="empty-state" style="margin:0; padding: 20px 0; color:var(--danger);">Failed to load prep logs.</p>`;
+        }
+    };
+
+    const showStage = (stageId) => {
+        [interviewStageSetup, interviewStageChat, interviewStageLoading, interviewStageResult].forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+        if (stageId === 'setup' && interviewStageSetup) interviewStageSetup.style.display = 'block';
+        if (stageId === 'chat' && interviewStageChat) interviewStageChat.style.display = 'block';
+        if (stageId === 'loading' && interviewStageLoading) interviewStageLoading.style.display = 'block';
+        if (stageId === 'result' && interviewStageResult) interviewStageResult.style.display = 'block';
+    };
+
+    if (btnStartInterview) {
+        btnStartInterview.addEventListener('click', async () => {
+            const role = interviewRoleInput.value.trim();
+            const type = interviewTypeSelect.value;
+            const benchmark = interviewBenchmarkSelect.value;
+
+            if (!role) {
+                showToast("Please enter your target role.");
+                return;
+            }
+
+            showStage('loading');
+            if (loadingStepText) loadingStepText.textContent = "Initializing simulation environment...";
+            if (loadingProgressBar) loadingProgressBar.style.width = "15%";
+
+            try {
+                const res = await fetch('/generate-mock-interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role, interview_type: type, benchmark })
+                });
+
+                if (!res.ok) throw new Error("Failed generation request");
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error);
+
+                interviewChatHistory = [
+                    { sender: 'interviewer', text: data.question }
+                ];
+                currentInterviewMeta = {
+                    role,
+                    type,
+                    benchmark,
+                    interviewerName: data.interviewer_name || "Interviewer"
+                };
+
+                if (interviewerNameLabel) interviewerNameLabel.textContent = currentInterviewMeta.interviewerName;
+                if (interviewMetaLabel) interviewMetaLabel.textContent = `${type} | ${benchmark} Benchmark`;
+                if (interviewProgressPill) interviewProgressPill.textContent = "Turn 1 of 3";
+                
+                if (responseInput) {
+                    responseInput.value = '';
+                    if (type === 'Coding & DSA') {
+                        responseInput.placeholder = "Write your solution approach, time/space complexity, and code here...";
+                    } else if (type === 'System Design') {
+                        responseInput.placeholder = "Design outline: 1. Core Requirements, 2. API Schema, 3. High Level Architecture, 4. Data Flow/Scaling...";
+                    } else {
+                        responseInput.placeholder = "STAR format: Situation, Task, Action, Result...";
+                    }
+                }
+                
+                if (charCounter) charCounter.textContent = "0 characters";
+                if (btnSubmitAnswer) {
+                    btnSubmitAnswer.textContent = "Submit Answer";
+                    btnSubmitAnswer.disabled = false;
+                }
+
+                renderChatStream();
+                showStage('chat');
+
+            } catch (err) {
+                console.error("Start interview failed:", err);
+                showToast(err.message || "Failed to initialize interview simulator.");
+                showStage('setup');
+            }
+        });
+    }
+
+    if (responseInput) {
+        responseInput.addEventListener('input', () => {
+            const count = responseInput.value.length;
+            if (charCounter) charCounter.textContent = `${count} characters`;
+        });
+    }
+
+    const renderChatStream = () => {
+        if (!chatStream) return;
+        chatStream.innerHTML = '';
+        interviewChatHistory.forEach(msg => {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-msg ${msg.sender}`;
+            
+            let htmlContent = escapeHTML(msg.text).replace(/\n/g, '<br>');
+            if (msg.text.includes('```')) {
+                htmlContent = escapeHTML(msg.text).replace(/```([\s\S]+?)```/g, (_, code) => {
+                    return `<pre style="background:var(--bg-card); border:1px solid var(--border); padding:10px; border-radius:6px; font-family:monospace; margin:8px 0; overflow-x:auto;">${code}</pre>`;
+                }).replace(/\n/g, '<br>');
+            }
+            
+            bubble.innerHTML = `
+                <div>${htmlContent}</div>
+                <div class="chat-msg-time">${new Date().toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit'})}</div>
+            `;
+            chatStream.appendChild(bubble);
+        });
+        chatStream.scrollTop = chatStream.scrollHeight;
+    };
+
+    if (btnSubmitAnswer) {
+        btnSubmitAnswer.addEventListener('click', async () => {
+            const responseText = responseInput.value.trim();
+            if (!responseText) {
+                showToast("Please provide your answer before submitting.");
+                return;
+            }
+
+            if (isWaitingForAI) return;
+
+            interviewChatHistory.push({ sender: 'candidate', text: responseText });
+            renderChatStream();
+
+            responseInput.value = '';
+            if (charCounter) charCounter.textContent = "0 characters";
+
+            const turns = interviewChatHistory.filter(m => m.sender === 'candidate').length;
+            
+            if (btnSubmitAnswer.textContent === "Submit for Evaluation") {
+                evaluateInterviewFlow();
+                return;
+            }
+
+            isWaitingForAI = true;
+            btnSubmitAnswer.disabled = true;
+            btnSubmitAnswer.textContent = "Processing...";
+            
+            try {
+                const res = await fetch('/respond-mock-interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        role: currentInterviewMeta.role,
+                        interview_type: currentInterviewMeta.type,
+                        benchmark: currentInterviewMeta.benchmark,
+                        chat_history: interviewChatHistory,
+                        user_response: responseText
+                    })
+                });
+
+                if (!res.ok) throw new Error("Failed response submission");
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                if (data.is_completed) {
+                    interviewChatHistory.push({ sender: 'interviewer', text: data.question });
+                    renderChatStream();
+                    
+                    btnSubmitAnswer.textContent = "Submit for Evaluation";
+                    btnSubmitAnswer.style.background = "linear-gradient(135deg, #f59e0b, #d97706)";
+                    btnSubmitAnswer.disabled = false;
+                    
+                    if (interviewProgressPill) interviewProgressPill.textContent = "Review Stage";
+                } else {
+                    interviewChatHistory.push({ sender: 'interviewer', text: data.question });
+                    renderChatStream();
+                    
+                    btnSubmitAnswer.textContent = "Submit Answer";
+                    btnSubmitAnswer.disabled = false;
+                    
+                    if (interviewProgressPill) {
+                        interviewProgressPill.textContent = `Turn ${turns + 1} of 3`;
+                    }
+                }
+
+            } catch (err) {
+                console.error("Submit response failed:", err);
+                showToast(err.message || "Failed to contact interviewer.");
+                btnSubmitAnswer.textContent = "Submit Answer";
+                btnSubmitAnswer.disabled = false;
+            } finally {
+                isWaitingForAI = false;
+            }
+        });
+    }
+
+    const evaluateInterviewFlow = async () => {
+        showStage('loading');
+        
+        let step = 0;
+        const steps = [
+            { text: "Extracting dialog transcript...", pct: "30%" },
+            { text: "Assessing solution completeness & code quality...", pct: "55%" },
+            { text: "Benchmarking metrics against high-growth company bars...", pct: "75%" },
+            { text: "Compiling detailed grade scorecard report...", pct: "90%" }
+        ];
+
+        const loadingInterval = setInterval(() => {
+            if (step < steps.length) {
+                if (loadingStepText) loadingStepText.textContent = steps[step].text;
+                if (loadingProgressBar) loadingProgressBar.style.width = steps[step].pct;
+                step++;
+            }
+        }, 2200);
+
+        try {
+            const res = await fetch('/evaluate-mock-interview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    role: currentInterviewMeta.role,
+                    interview_type: currentInterviewMeta.type,
+                    benchmark: currentInterviewMeta.benchmark,
+                    chat_history: interviewChatHistory
+                })
+            });
+
+            clearInterval(loadingInterval);
+            if (!res.ok) throw new Error("Evaluation request failed");
+            const report = await res.json();
+            if (report.error) throw new Error(report.error);
+
+            renderScorecard(report);
+
+        } catch (err) {
+            clearInterval(loadingInterval);
+            console.error("Evaluation failed:", err);
+            showToast("Failed to compile evaluation report. Returning to hub.");
+            showStage('setup');
+            loadInterviewHistory();
+        }
+    };
+
+    const renderScorecard = (report) => {
+        showStage('result');
+
+        const score = report.score || 0;
+        if (resultScoreLabel) resultScoreLabel.textContent = `${score}%`;
+        
+        if (resultRing) {
+            const offset = 389.56 - (389.56 * score / 100);
+            resultRing.style.strokeDashoffset = offset;
+        }
+
+        if (resultVerdict) {
+            resultVerdict.textContent = report.verdict || "No Verdict";
+            resultVerdict.className = 'decision-pill'; 
+            const lowerVerdict = (report.verdict || '').toLowerCase();
+            if (lowerVerdict.includes('strong hire') || lowerVerdict.includes('hire')) {
+                resultVerdict.classList.add('select');
+            } else if (lowerVerdict.includes('reject') || lowerVerdict.includes('no hire')) {
+                resultVerdict.classList.add('reject');
+            } else {
+                resultVerdict.classList.add('borderline');
+            }
+        }
+
+        if (resultJudgment) {
+            resultJudgment.textContent = report.recruiter_judgment || '';
+        }
+
+        if (resultCategoriesList) {
+            resultCategoriesList.innerHTML = '';
+            const categories = report.categories || [];
+            categories.forEach(cat => {
+                const catRow = document.createElement('div');
+                catRow.style.display = 'flex';
+                catRow.style.flexDirection = 'column';
+                catRow.style.gap = '4px';
+                
+                catRow.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600;">
+                        <span style="color:var(--text-sub);">${escapeHTML(cat.category)}</span>
+                        <span style="color:var(--primary); font-family:monospace;">${cat.score}/100</span>
+                    </div>
+                    <div style="width:100%; height:6px; background:var(--border); border-radius:99px; overflow:hidden;">
+                        <div style="width:${cat.score}%; height:100%; background:var(--primary); border-radius:99px;"></div>
+                    </div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">${escapeHTML(cat.feedback)}</span>
+                `;
+                resultCategoriesList.appendChild(catRow);
+            });
+        }
+
+        if (resultStrengths) {
+            resultStrengths.innerHTML = '';
+            (report.strengths || []).forEach(str => {
+                const li = document.createElement('li');
+                li.textContent = str;
+                resultStrengths.appendChild(li);
+            });
+            if ((report.strengths || []).length === 0) {
+                resultStrengths.innerHTML = '<li>None identified.</li>';
+            }
+        }
+
+        if (resultWeaknesses) {
+            resultWeaknesses.innerHTML = '';
+            (report.weaknesses || []).forEach(weak => {
+                const li = document.createElement('li');
+                li.textContent = weak;
+                resultWeaknesses.appendChild(li);
+            });
+            if ((report.weaknesses || []).length === 0) {
+                resultWeaknesses.innerHTML = '<li>None identified.</li>';
+            }
+        }
+
+        if (resultActionPlan) {
+            resultActionPlan.innerHTML = '';
+            (report.action_plan || []).forEach(action => {
+                const li = document.createElement('li');
+                li.textContent = action;
+                resultActionPlan.appendChild(li);
+            });
+            if ((report.action_plan || []).length === 0) {
+                resultActionPlan.innerHTML = '<li>No actions generated. Good job!</li>';
+            }
+        }
+
+        if (resultIdeal) {
+            resultIdeal.textContent = report.ideal_response || 'No ideal response provided.';
+        }
+    };
+
+    if (btnQuitInterview) {
+        btnQuitInterview.addEventListener('click', () => {
+            const ok = confirm("Are you sure you want to quit this mock interview simulation? Your ongoing performance progress will be lost.");
+            if (ok) {
+                showStage('setup');
+                loadInterviewHistory();
+            }
+        });
+    }
+
+    if (btnBackToHub) {
+        btnBackToHub.addEventListener('click', () => {
+            showStage('setup');
+            loadInterviewHistory();
         });
     }
 

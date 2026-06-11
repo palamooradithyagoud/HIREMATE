@@ -612,28 +612,197 @@
             <section id="view-interviews" class="content-view">
                 <div class="welcome-banner">
                     <div>
-                        <h1 class="welcome-title">Mock Interviews</h1>
-                        <p class="welcome-subtitle">Schedule and prepare for simulated technical and behavioral rounds.</p>
+                        <h1 class="welcome-title" id="interviews-title">Mock Interview Simulator</h1>
+                        <p class="welcome-subtitle" id="interviews-subtitle">Conduct real-time, AI-driven mock interviews and get instant SaaS-level readiness evaluations.</p>
                     </div>
                 </div>
-                <div class="dashboard-grid">
-                    <div class="card card-progress">
-                        <h3 class="card-heading">Interview Preparation Checklist</h3>
-                        <ul class="score-checks">
-                            <li><span class="check-icon">✓</span> Practice behavioral questions (STAR method)</li>
-                            <li><span class="check-icon">✓</span> Complete at least 2 mock coding interviews</li>
-                            <li><span class="check-icon">✓</span> Revise system design scaling patterns</li>
-                        </ul>
+
+                <!-- STAGE 1: SETUP HUB -->
+                <div id="interview-stage-setup" class="interview-stage active">
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                        <!-- Selection panel -->
+                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+                            <h3 class="card-heading" style="margin-bottom: 4px;">🎯 Launch New Interview</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">Configure your target parameters to initialize the simulator.</p>
+                            
+                            <div class="input-group">
+                                <label class="input-label" style="font-weight: 700;">Target Role</label>
+                                <input type="text" id="interview-role-input" class="skill-input" placeholder="e.g. Backend Engineer, Fullstack Developer" style="width: 100%; box-sizing: border-box; padding: 12px 16px;">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label" style="font-weight: 700;">Round Type</label>
+                                <select id="interview-type-select" class="level-dropdown" style="width: 100%; padding: 12px 16px;">
+                                    <option value="Coding & DSA">💻 Coding & Data Structures (DSA)</option>
+                                    <option value="System Design">🧭 System Design & Scalability</option>
+                                    <option value="Behavioral">💼 Behavioral & STAR Method</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label" style="font-weight: 700;">Company Benchmark</label>
+                                <select id="interview-benchmark-select" class="level-dropdown" style="width: 100%; padding: 12px 16px;">
+                                    <option value="FAANG">FAANG Tier (Google, Meta, Netflix)</option>
+                                    <option value="Tier-1 Startup">Tier-1 Startup (Stripe, Uber, Airbnb)</option>
+                                    <option value="Average Company" selected>Average Tech / Enterprise</option>
+                                </select>
+                            </div>
+
+                            <button id="btn-start-interview" class="cta-button" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), #4f46e5); font-weight: 700; margin-top: 8px;">
+                                Start Simulation ⚡
+                            </button>
+                        </div>
+
+                        <!-- Info/Guide panel -->
+                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 class="card-heading" style="margin-bottom: 12px;">💡 How it works</h3>
+                                <ul class="score-checks" style="display: flex; flex-direction: column; gap: 14px; font-size: 0.9rem; color: var(--text-sub);">
+                                    <li><span class="check-icon" style="color: var(--primary);">✓</span> <strong>3-Turn Conversation:</strong> The AI interviewer will present an initial question and ask 2 follow-ups to probe your depth.</li>
+                                    <li><span class="check-icon" style="color: var(--primary);">✓</span> <strong>STAR/Code templates:</strong> Type your code or detailed answers in the rich editor text area.</li>
+                                    <li><span class="check-icon" style="color: var(--primary);">✓</span> <strong>SaaS grading audit:</strong> Get score break-downs, strengths, key weaknesses, and an expert-written sample answer.</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(37,99,235,0.08); border-left: 4px solid var(--primary); padding: 14px 18px; border-radius: 8px; margin-top: 16px;">
+                                <p style="margin: 0; font-size: 0.825rem; color: var(--primary); font-weight: 600; line-height: 1.5;">
+                                    Note: Every simulation performance is stored in your personal prep log and integrated into your overall readiness profile.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card card-upcoming" style="grid-row:span 1;">
-                        <h3 class="card-heading">Scheduled Sessions</h3>
-                        <div class="upcoming-list">
-                            <div class="upcoming-item">
-                                <div class="item-icon-box bg-blue-light">📅</div>
-                                <div class="item-details">
-                                    <span class="item-title">Mock Interview</span>
-                                    <span class="item-sub">Behavioral Round</span>
-                                    <span class="item-time">May 24, 5:00 PM</span>
+
+                    <!-- Interview History Section -->
+                    <div class="card" style="padding: 24px;">
+                        <h3 class="card-heading" style="margin-bottom: 16px;">📜 Prep History & Audit Logs</h3>
+                        <div id="interview-history-list" style="display: flex; flex-direction: column; gap: 14px;">
+                            <p class="empty-state" style="margin:0; padding: 20px 0;">No interviews simulated yet. Launch your first round above!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STAGE 2: ACTIVE INTERVIEW CHAT -->
+                <div id="interview-stage-chat" class="interview-stage" style="display: none;">
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr; gap: 24px;">
+                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; height: 620px;">
+                            <!-- Header Info -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🤖</div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <strong id="interviewer-name-label" style="color: var(--text-main); font-size: 1rem;">Interviewer</strong>
+                                        <span id="interview-meta-label" style="color: var(--text-muted); font-size: 0.75rem;">Coding & DSA | Google Benchmark</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span id="interview-progress-pill" class="pill-badge" style="background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 0.8rem; padding: 6px 12px;">Turn 1 of 3</span>
+                                    <button id="btn-quit-interview" style="background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">Quit</button>
+                                </div>
+                            </div>
+
+                            <!-- Chat Stream -->
+                            <div id="interview-chat-stream" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 8px; margin-bottom: 20px;">
+                                <!-- Messages will be dynamically rendered here -->
+                            </div>
+
+                            <!-- Response Editor & Form -->
+                            <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span id="response-guideline-label" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Provide your code or detailed explanation below:</span>
+                                    <span id="char-counter" style="font-size: 0.75rem; color: var(--text-muted);">0 characters</span>
+                                </div>
+                                <div style="display: flex; gap: 12px; align-items: flex-end;">
+                                    <textarea id="interview-response-input" class="skill-input" placeholder="Type your response here..." style="flex: 1; height: 110px; padding: 12px; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; resize: none; box-sizing: border-box; line-height: 1.5;"></textarea>
+                                    <button id="btn-submit-answer" class="cta-button" style="height: 110px; width: 140px; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                                        Submit Answer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STAGE 3: LOADING AUDIT -->
+                <div id="interview-stage-loading" class="interview-stage" style="display: none; padding: 60px 20px; text-align: center;">
+                    <div class="card" style="max-width: 500px; margin: 0 auto; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="spinner" style="width: 50px; height: 50px; border-width: 5px;"></div>
+                        <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.4rem; color: var(--text-main); margin: 0;">Compiling Interview Report</h3>
+                        <p id="interview-loading-step" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; font-weight: 500; margin: 0;">Analyzing solution accuracy...</p>
+                        <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 10px;">
+                            <div id="interview-loading-bar" style="background: var(--primary); height: 100%; width: 10%; transition: width 0.4s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STAGE 4: EVALUATION SCORECARD -->
+                <div id="interview-stage-result" class="interview-stage" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.4rem; margin: 0;">SaaS Evaluation Report</h2>
+                        <button id="btn-back-to-hub" class="btn-outline-primary" style="padding: 8px 16px; font-weight: 600; font-size: 0.85rem;">← Back to Prep Hub</button>
+                    </div>
+
+                    <div class="dashboard-grid" style="grid-template-columns: 340px 1fr; gap: 24px; align-items: start;">
+                        <!-- Left Panel: Score and Verdict -->
+                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Interview Performance</span>
+                            
+                            <!-- Circular Score Ring -->
+                            <div class="circular-progress-wrap" style="width: 150px; height: 150px; position: relative; display: flex; align-items: center; justify-content: center;">
+                                <svg class="progress-ring" width="150" height="150">
+                                    <circle class="progress-ring-bg" stroke="var(--border)" stroke-width="10" fill="transparent" r="62" cx="75" cy="75"/>
+                                    <circle class="progress-ring-bar" id="interview-result-ring" stroke="var(--primary)" stroke-dasharray="389.56" stroke-dashoffset="389.56" stroke-width="10" fill="transparent" r="62" cx="75" cy="75"/>
+                                </svg>
+                                <div style="position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <strong id="interview-result-score-label" style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0%</strong>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Overall Score</span>
+                                </div>
+                            </div>
+
+                            <!-- Verdict Badge -->
+                            <div style="width: 100%;">
+                                <span id="interview-result-verdict" class="decision-pill" style="font-size: 1.1rem; font-weight: 800; padding: 10px 24px; border-radius: 12px; display: inline-block; width: 80%; text-align: center; text-transform: uppercase;">Hire</span>
+                            </div>
+
+                            <!-- Categories list -->
+                            <div style="width: 100%; border-top: 1px solid var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 14px; text-align: left;">
+                                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; margin: 0 0 4px 0;">Category Grades</h4>
+                                
+                                <div id="interview-result-categories-list" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <!-- Injected dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Detailed Audit -->
+                        <div style="display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0;">
+                            <!-- Recruiter summary -->
+                            <div class="card" style="padding: 24px;">
+                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 10px;">👨‍💼 Recruiter Snap Judgment</h4>
+                                <p id="interview-result-judgment" style="font-style: italic; font-size: 0.925rem; color: var(--text-sub); line-height: 1.6; margin: 0;"></p>
+                            </div>
+
+                            <!-- Strengths and Weaknesses -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="card" style="padding: 20px;">
+                                    <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--success); margin-bottom: 12px;">🌟 Key Strengths</h4>
+                                    <ul id="interview-result-strengths" class="detailed-list" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; padding-left: 16px; margin: 0;"></ul>
+                                </div>
+                                <div class="card" style="padding: 20px;">
+                                    <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--danger); margin-bottom: 12px;">⚠️ Critical Weaknesses</h4>
+                                    <ul id="interview-result-weaknesses" class="detailed-list" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; padding-left: 16px; margin: 0;"></ul>
+                                </div>
+                            </div>
+
+                            <!-- Action Plan -->
+                            <div class="card" style="padding: 24px;">
+                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 12px;">📋 Targeted Action Plan</h4>
+                                <ul id="interview-result-action-plan" class="detailed-list" style="display: flex; flex-direction: column; gap: 10px; font-size: 0.875rem; padding-left: 16px; margin: 0; line-height: 1.5;"></ul>
+                            </div>
+
+                            <!-- Ideal Sample Response -->
+                            <div class="card" style="padding: 24px;">
+                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 12px;">💡 Ideal Expert Response</h4>
+                                <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto;">
+                                    <pre id="interview-result-ideal" style="font-family: 'Courier New', Courier, monospace; font-size: 0.875rem; line-height: 1.6; color: var(--text-main); margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
                                 </div>
                             </div>
                         </div>
