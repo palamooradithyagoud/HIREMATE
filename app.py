@@ -1431,7 +1431,25 @@ def logout():
 def get_user_session():
     name = g.user.user_metadata.get("full_name") if g.user.user_metadata else None
     if not name:
+        name = g.user.user_metadata.get("name") if g.user.user_metadata else None
+    if not name:
         name = g.user_email.split("@")[0].capitalize()
+        
+    # Ensure profile row exists in the public.profiles database table (for OAuth sign-ups fallback)
+    sb = get_sb()
+    if sb:
+        try:
+            res = sb.table("profiles").select("id").eq("id", g.user_id).execute()
+            if not res.data:
+                sb.table("profiles").insert({
+                    "id": g.user_id,
+                    "full_name": name,
+                    "email": g.user_email
+                }).execute()
+                print(f"[AUTH] Auto-created database profile for OAuth user {g.user_id}.")
+        except Exception as e:
+            print(f"[AUTH] Failed to auto-create database profile for OAuth user: {e}")
+
     return jsonify({
         "logged_in": True,
         "id": g.user_id,
