@@ -2301,12 +2301,24 @@ def get_interview_history():
         return jsonify([])
 
 
+JOBS_CACHE = {}
+JOBS_CACHE_EXPIRY = 600  # 10 minutes cache lifespan
+
 @app.route("/api/jobs", methods=["GET"])
 @token_required
 def get_jobs():
-    query = request.args.get("query", "Software Engineer")
+    query = request.args.get("query", "Software Engineer").strip().lower()
     page = request.args.get("page", "1")
     
+    # Check cache first
+    cache_key = f"{query}_{page}"
+    if cache_key in JOBS_CACHE:
+        timestamp, cached_data = JOBS_CACHE[cache_key]
+        import time
+        if time.time() - timestamp < JOBS_CACHE_EXPIRY:
+            print(f"[JOBS] Cache HIT for query '{query}' (page {page})")
+            return jsonify(cached_data)
+            
     url = "https://jsearch.p.rapidapi.com/search-v2"
     headers = {
         "x-rapidapi-key": os.getenv("RAPIDAPI_KEY", "f64a9f413emsh9ec9731173c93f4p11a020jsn1bc1252068e5"),
@@ -2315,9 +2327,14 @@ def get_jobs():
     querystring = {"query": query, "page": page, "num_pages": "1"}
     
     try:
-        response = requests.get(url, headers=headers, params=querystring, timeout=10)
+        response = requests.get(url, headers=headers, params=querystring, timeout=30)
         if response.status_code == 200:
-            return jsonify(response.json())
+            resp_data = response.json()
+            # Store in cache
+            import time
+            JOBS_CACHE[cache_key] = (time.time(), resp_data)
+            print(f"[JOBS] Cache MISS for query '{query}', data cached successfully.")
+            return jsonify(resp_data)
         else:
             print(f"[JOBS] API error status {response.status_code}: {response.text}")
             return jsonify({"error": f"Failed to fetch jobs: status {response.status_code}"}), response.status_code
