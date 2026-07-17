@@ -1184,53 +1184,141 @@
             <section id="view-settings" class="content-view">
                 <div class="welcome-banner">
                     <div>
-                        <h1 class="welcome-title">Account Settings</h1>
-                        <p class="welcome-subtitle">Configure your profile, API keys, and configurations.</p>
+                        <h1 class="welcome-title">Settings & Profile</h1>
+                        <p class="welcome-subtitle">Configure your professional identity and link your profiles.</p>
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px; width:100%;">
-                    <div class="card" style="flex: 1;">
-                        <h3 class="card-heading">Profile Configurations</h3>
-                        <div style="display:flex; flex-direction:column; gap:20px;">
-                            <div style="background:var(--bg-main); border:1px solid var(--border); padding:16px 20px; border-radius:var(--radius-md); display:flex; align-items:center; gap:16px;">
-                                <div id="profile-avatar" style="width:48px; height:48px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; font-family:'Outfit',sans-serif; flex-shrink:0;">U</div>
-                                <div style="display:flex; flex-direction:column; min-width:0;">
-                                    <strong id="profile-user-name" style="color:var(--text-main); font-size:1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</strong>
-                                    <span id="profile-user-email" style="color:var(--text-muted); font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
+                
+                <div class="settings-container" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; width: 100%;">
+                    <!-- Main Form Card -->
+                    <div class="card" style="padding: 24px;">
+                        <h3 class="card-heading" style="margin-bottom: 20px;">👤 Professional Profile</h3>
+                        <form id="settings-profile-form" onsubmit="event.preventDefault();" style="display: flex; flex-direction: column; gap: 20px;">
+                            
+                            <!-- Section 1: Contact Details -->
+                            <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px;">
+                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Personal Details</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Full Name</label>
+                                        <input id="settings-name" type="text" placeholder="e.g. John Doe" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Email Address</label>
+                                        <input id="settings-email" type="email" placeholder="e.g. john@example.com" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Phone Number</label>
+                                    <input id="settings-phone" type="text" placeholder="e.g. +1 (555) 019-2834" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
                                 </div>
                             </div>
-                            <div style="display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--border); padding-top:16px;">
-                                <h4 style="font-family:'Outfit', sans-serif; font-weight:700; color:var(--text-main); margin-bottom:4px;">🔗 Coding Profiles</h4>
-                                <div>
-                                    <label class="input-label" style="font-size:0.8rem; margin-bottom:4px; display:block;">LeetCode Profile</label>
-                                    <input id="settings-leetcode" type="text" placeholder="LeetCode username or URL" class="skill-input" style="padding:10px; width:100%; box-sizing:border-box;" />
+
+                            <!-- Section 2: Online Presence -->
+                            <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Professional Links</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">LinkedIn URL</label>
+                                        <input id="settings-linkedin" type="text" placeholder="linkedin.com/in/username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">GitHub Profile</label>
+                                        <input id="settings-github" type="text" placeholder="github.com/username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label class="input-label" style="font-size:0.8rem; margin-bottom:4px; display:block;">GitHub Profile</label>
-                                    <input id="settings-github" type="text" placeholder="GitHub username or URL" class="skill-input" style="padding:10px; width:100%; box-sizing:border-box;" />
+                                    <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Portfolio Website</label>
+                                    <input id="settings-portfolio" type="text" placeholder="e.g. https://myportfolio.dev" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
                                 </div>
-                                <div>
-                                    <label class="input-label" style="font-size:0.8rem; margin-bottom:4px; display:block;">Codeforces Profile</label>
-                                    <input id="settings-codeforces" type="text" placeholder="Codeforces username or URL" class="skill-input" style="padding:10px; width:100%; box-sizing:border-box;" />
-                                </div>
-                                <div>
-                                    <label class="input-label" style="font-size:0.8rem; margin-bottom:4px; display:block;">Codementor Profile</label>
-                                    <input id="settings-codementor" type="text" placeholder="Codementor username or URL" class="skill-input" style="padding:10px; width:100%; box-sizing:border-box;" />
-                                </div>
-                                <button id="btn-save-profiles" class="cta-button" style="padding:12px; margin-top:8px; font-size:0.9rem; width:100%;">
-                                    Save Coding Profiles
-                                </button>
                             </div>
-                            <button class="btn-outline-primary" style="color:var(--danger); border-color:var(--danger); width:100%; height:44px; display:flex; align-items:center; justify-content:center; font-weight:600;" onclick="handleLogout()">
+
+                            <!-- Section 3: Professional Background -->
+                            <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Background & Experience</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Education</label>
+                                        <textarea id="settings-education" placeholder="e.g. B.S. in Computer Science - Stanford (2025)" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Experience</label>
+                                        <textarea id="settings-experience" placeholder="e.g. Software Engineer Intern at Meta (Summer 2024)" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Projects</label>
+                                        <textarea id="settings-projects" placeholder="e.g. Distributed Key-Value Store, HireMate career app" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Certifications</label>
+                                        <textarea id="settings-certifications" placeholder="e.g. AWS Certified Solutions Architect, Google Analytics" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Skills (comma-separated)</label>
+                                        <textarea id="settings-skills" placeholder="e.g. Python, SQL, React, Docker, Data Structures" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Resume URL or Summary</label>
+                                        <textarea id="settings-resume" placeholder="Paste link to hosted resume (e.g. Google Drive/Dropbox) or paste text summary." class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Coding Profiles (Legacy support) -->
+                            <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Coding Stats Profiles</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">LeetCode Username</label>
+                                        <input id="settings-leetcode" type="text" placeholder="LeetCode username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Codeforces Username</label>
+                                        <input id="settings-codeforces" type="text" placeholder="Codeforces username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="btn-save-profiles" class="cta-button" style="padding: 14px; margin-top: 10px; font-size: 0.95rem; width: 100%; font-weight: 700; cursor: pointer;">
+                                Save Professional Profile
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right Column Info & Actions -->
+                    <div style="display: flex; flex-direction: column; gap: 24px;">
+                        <!-- Status Summary Card -->
+                        <div class="card" style="padding: 20px;">
+                            <h3 class="card-heading" style="margin-bottom: 16px;">📋 Profile Status</h3>
+                            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; color: var(--text-muted);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+                                    <span>User Name:</span>
+                                    <strong id="profile-user-name" style="color: var(--text-main); font-weight: 700;">Loading...</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+                                    <span>LeetCode Sync:</span>
+                                    <span id="summary-leetcode" style="font-weight: 600;">Loading...</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+                                    <span>GitHub Sync:</span>
+                                    <span id="summary-github" style="font-weight: 600;">Loading...</span>
+                                </div>
+                            </div>
+                            <button class="btn-outline-primary" style="color: var(--danger); border-color: var(--danger); width: 100%; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: 600; margin-top: 20px; cursor: pointer;" onclick="handleLogout()">
                                 Sign Out / Log Out
                             </button>
                         </div>
-                    </div>
 
-                    <div class="card" style="flex: 1;">
-                        <h3 class="card-heading">🏆 Earned Milestones</h3>
-                        <div id="profile-milestones-list" style="display:flex; flex-direction:column; gap:12px; max-height:300px; overflow-y:auto; padding-right:4px;">
-                            <p class="empty-state" style="margin:0; padding:10px 0; font-size:0.85rem;">No milestone achievements earned yet.</p>
+                        <!-- Achievements / Milestones Card -->
+                        <div class="card" style="padding: 20px;">
+                            <h3 class="card-heading" style="margin-bottom: 16px;">🏆 Earned Milestones</h3>
+                            <div id="profile-milestones-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 250px; overflow-y: auto; padding-right: 4px;">
+                                <p class="empty-state" style="margin: 0; padding: 10px 0; font-size: 0.85rem;">No milestone achievements earned yet.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

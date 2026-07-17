@@ -3444,10 +3444,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Coding Profiles Logic
+    // Professional Profiles Logic
     const loadCodingProfiles = async () => {
-        let leetcode = "";
+        let name = "";
+        let email = "";
+        let phone = "";
+        let linkedin = "";
         let github = "";
+        let portfolio = "";
+        let education = "";
+        let experience = "";
+        let projects = "";
+        let certifications = "";
+        let skills = "";
+        let resume = "";
+        let leetcode = "";
         let codeforces = "";
         let codementor = "";
 
@@ -3456,8 +3467,19 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const profile = await window.db.getProfile(currentUserId);
                 if (profile) {
-                    leetcode = profile.leetcode_profile || "";
+                    name = profile.full_name || "";
+                    email = profile.email || "";
+                    phone = profile.phone || "";
+                    linkedin = profile.linkedin_profile || "";
                     github = profile.github_profile || "";
+                    portfolio = profile.portfolio_url || "";
+                    education = profile.education || "";
+                    experience = profile.experience || "";
+                    projects = profile.projects || "";
+                    certifications = profile.certifications || "";
+                    skills = profile.skills || "";
+                    resume = profile.resume_url || "";
+                    leetcode = profile.leetcode_profile || "";
                     codeforces = profile.codeforces_profile || "";
                     codementor = profile.codementor_profile || "";
                 }
@@ -3467,38 +3489,102 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 2. Fallback to localStorage
-        if (!leetcode) leetcode = localStorage.getItem('profile_leetcode') || "";
+        if (!name) name = localStorage.getItem('profile_name') || "";
+        if (!email) email = localStorage.getItem('profile_email') || "";
+        if (!phone) phone = localStorage.getItem('profile_phone') || "";
+        if (!linkedin) linkedin = localStorage.getItem('profile_linkedin') || "";
         if (!github) github = localStorage.getItem('profile_github') || "";
+        if (!portfolio) portfolio = localStorage.getItem('profile_portfolio') || "";
+        if (!education) education = localStorage.getItem('profile_education') || "";
+        if (!experience) experience = localStorage.getItem('profile_experience') || "";
+        if (!projects) projects = localStorage.getItem('profile_projects') || "";
+        if (!certifications) certifications = localStorage.getItem('profile_certifications') || "";
+        if (!skills) skills = localStorage.getItem('profile_skills') || "";
+        if (!resume) resume = localStorage.getItem('profile_resume') || "";
+        if (!leetcode) leetcode = localStorage.getItem('profile_leetcode') || "";
         if (!codeforces) codeforces = localStorage.getItem('profile_codeforces') || "";
         if (!codementor) codementor = localStorage.getItem('profile_codementor') || "";
 
         // 3. Populate inputs & summaries
-        const setValAndSummary = (id, summaryId, val) => {
+        const setVal = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.value = val;
-            const summaryEl = document.getElementById(summaryId);
-            if (summaryEl) {
-                summaryEl.textContent = val ? val : "Not configured 🛑";
-                summaryEl.style.color = val ? "var(--text-main)" : "var(--danger)";
+        };
+        setVal('settings-name', name);
+        setVal('settings-email', email);
+        setVal('settings-phone', phone);
+        setVal('settings-linkedin', linkedin);
+        setVal('settings-github', github);
+        setVal('settings-portfolio', portfolio);
+        setVal('settings-education', education);
+        setVal('settings-experience', experience);
+        setVal('settings-projects', projects);
+        setVal('settings-certifications', certifications);
+        setVal('settings-skills', skills);
+        setVal('settings-resume', resume);
+        setVal('settings-leetcode', leetcode);
+        setVal('settings-codeforces', codeforces);
+        
+        // Update summaries on right card
+        const summaryName = document.getElementById('profile-user-name');
+        if (summaryName) summaryName.textContent = name || "Loading...";
+
+        const setSummaryText = (summaryId, val) => {
+            const el = document.getElementById(summaryId);
+            if (el) {
+                el.textContent = val ? val : "Not configured 🛑";
+                el.style.color = val ? "var(--text-main)" : "var(--danger)";
             }
         };
-        setValAndSummary('settings-leetcode', 'summary-leetcode', leetcode);
-        setValAndSummary('settings-github', 'summary-github', github);
-        setValAndSummary('settings-codeforces', 'summary-codeforces', codeforces);
-        setValAndSummary('settings-codementor', 'summary-codementor', codementor);
+        setSummaryText('summary-leetcode', leetcode);
+        setSummaryText('summary-github', github);
     };
 
     const saveCodingProfiles = async () => {
-        const leetcode = document.getElementById('settings-leetcode')?.value.trim() || "";
+        const name = document.getElementById('settings-name')?.value.trim() || "";
+        const email = document.getElementById('settings-email')?.value.trim() || "";
+        const phone = document.getElementById('settings-phone')?.value.trim() || "";
+        const linkedin = document.getElementById('settings-linkedin')?.value.trim() || "";
         const github = document.getElementById('settings-github')?.value.trim() || "";
+        const portfolio = document.getElementById('settings-portfolio')?.value.trim() || "";
+        const education = document.getElementById('settings-education')?.value.trim() || "";
+        const experience = document.getElementById('settings-experience')?.value.trim() || "";
+        const projects = document.getElementById('settings-projects')?.value.trim() || "";
+        const certifications = document.getElementById('settings-certifications')?.value.trim() || "";
+        const skills = document.getElementById('settings-skills')?.value.trim() || "";
+        const resume = document.getElementById('settings-resume')?.value.trim() || "";
+        const leetcode = document.getElementById('settings-leetcode')?.value.trim() || "";
         const codeforces = document.getElementById('settings-codeforces')?.value.trim() || "";
-        const codementor = document.getElementById('settings-codementor')?.value.trim() || "";
 
         // Save to local storage for safety/instant feedback
-        localStorage.setItem('profile_leetcode', leetcode);
+        localStorage.setItem('profile_name', name);
+        localStorage.setItem('profile_email', email);
+        localStorage.setItem('profile_phone', phone);
+        localStorage.setItem('profile_linkedin', linkedin);
         localStorage.setItem('profile_github', github);
+        localStorage.setItem('profile_portfolio', portfolio);
+        localStorage.setItem('profile_education', education);
+        localStorage.setItem('profile_experience', experience);
+        localStorage.setItem('profile_projects', projects);
+        localStorage.setItem('profile_certifications', certifications);
+        localStorage.setItem('profile_skills', skills);
+        localStorage.setItem('profile_resume', resume);
+        localStorage.setItem('profile_leetcode', leetcode);
         localStorage.setItem('profile_codeforces', codeforces);
-        localStorage.setItem('profile_codementor', codementor);
+
+        // Update summaries on UI instantly
+        const summaryName = document.getElementById('profile-user-name');
+        if (summaryName) summaryName.textContent = name || "Not configured";
+
+        const setSummaryText = (summaryId, val) => {
+            const el = document.getElementById(summaryId);
+            if (el) {
+                el.textContent = val ? val : "Not configured 🛑";
+                el.style.color = val ? "var(--text-main)" : "var(--danger)";
+            }
+        };
+        setSummaryText('summary-leetcode', leetcode);
+        setSummaryText('summary-github', github);
 
         // Save to DB via backend endpoint (robust, bypasses client-side RLS issues)
         let dbSaved = false;
@@ -3507,10 +3593,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    leetcode_profile: leetcode,
+                    full_name: name,
+                    email: email,
+                    phone: phone,
+                    linkedin_profile: linkedin,
                     github_profile: github,
-                    codeforces_profile: codeforces,
-                    codementor_profile: codementor
+                    portfolio_url: portfolio,
+                    education: education,
+                    experience: experience,
+                    projects: projects,
+                    certifications: certifications,
+                    skills: skills,
+                    resume_url: resume,
+                    leetcode_profile: leetcode,
+                    codeforces_profile: codeforces
                 })
             });
             if (res.ok) {
@@ -3520,13 +3616,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } catch (e) {
-            console.error("Failed to save coding profiles via backend:", e);
+            console.error("Failed to save profile via backend:", e);
         }
 
         if (dbSaved) {
-            showToast('✅ Coding profiles saved successfully to Cloud & local storage!');
+            showToast('✅ Profile saved successfully to Cloud & local storage!');
         } else {
-            showToast('✅ Coding profiles saved locally (Cloud sync failed or pending schema migration).');
+            showToast('✅ Profile saved locally (Cloud sync failed or pending schema migration).');
         }
 
         if (leetcode) {

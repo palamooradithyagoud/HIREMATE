@@ -1637,18 +1637,36 @@ def save_coding_profiles():
         return jsonify({"error": "DB unavailable"}), 500
     try:
         body = request.get_json(silent=True) or {}
-        leetcode = body.get("leetcode_profile", "").strip()
-        github = body.get("github_profile", "").strip()
-        codeforces = body.get("codeforces_profile", "").strip()
-        codementor = body.get("codementor_profile", "").strip()
+        
+        # Build update fields dynamically to handle any database constraints or schema mismatches
+        update_data = {}
+        
+        # Helper to set clean string
+        def set_field(req_key, db_key=None):
+            if not db_key:
+                db_key = req_key
+            val = body.get(req_key)
+            if val is not None:
+                update_data[db_key] = val.strip()
+
+        set_field("full_name")
+        set_field("email")
+        set_field("phone")
+        set_field("linkedin_profile")
+        set_field("github_profile")
+        set_field("portfolio_url")
+        set_field("education")
+        set_field("experience")
+        set_field("projects")
+        set_field("certifications")
+        set_field("skills")
+        set_field("resume_url")
+        set_field("leetcode_profile")
+        set_field("codeforces_profile")
+        set_field("codementor_profile")
         
         # Update profiles table on the backend
-        res = sb.table("profiles").update({
-            "leetcode_profile": leetcode,
-            "github_profile": github,
-            "codeforces_profile": codeforces,
-            "codementor_profile": codementor
-        }).eq("id", g.user_id).execute()
+        res = sb.table("profiles").update(update_data).eq("id", g.user_id).execute()
         
         print(f"[PROFILES] Backend successfully updated profiles for user {g.user_id}.")
         return jsonify({"status": "success"})
