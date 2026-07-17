@@ -1,6 +1,6 @@
-# 🛰️ SkillPath — Enterprise AI Career Accelerator
+# 🛰️ HireMate — Enterprise AI Career Accelerator
 
-SkillPath is a high-performance, SaaS-style career readiness platform designed to accelerate candidate readiness for FAANG and top-tier technology companies. By orchestrating multi-agent LLM systems, local curated learning pathways, and cloud-scale database operations, SkillPath offers hyper-personalized roadmap extraction, resume assessment, algorithmic practice metrics, and mock interview targeting.
+HireMate is a high-performance, SaaS-style career readiness platform designed to accelerate candidate readiness for FAANG and top-tier technology companies. By orchestrating multi-agent LLM systems, local curated learning pathways, and cloud-scale database operations, HireMate offers hyper-personalized roadmap extraction, resume assessment, algorithmic practice metrics, and mock interview targeting.
 
 ---
 
@@ -29,7 +29,7 @@ SkillPath is a high-performance, SaaS-style career readiness platform designed t
 
 ## 🏗️ System Architecture
 
-SkillPath is designed around a decoupled client-server architecture backed by a scalable SQL persistence layer and a high-throughput AI inference engine.
+HireMate is designed around a decoupled client-server architecture backed by a scalable SQL persistence layer and a high-throughput AI inference engine.
 
 ```mermaid
 graph TD
@@ -178,7 +178,7 @@ All requests to endpoints (excluding `/login`, `/signup`, and `/login-page`) req
 | :--- | :--- | :--- | :--- |
 | `POST` | `/signup` | Create a new user profile in Supabase Auth | None |
 | `POST` | `/login` | Authenticate user credentials and return JWT | None |
-| `POST` | `/get-resource` | Query skill path roadmap and recommendations | `Authorization` |
+| `POST` | `/get-resource` | Query learning path roadmap and recommendations | `Authorization` |
 | `POST` | `/analyze-resume` | Parse and evaluate resume transcript | `Authorization` |
 | `GET` | `/get-companies` | Fetch supported target companies for DSA | `Authorization` |
 | `GET` | `/get-questions` | Fetch frequency-sorted LeetCode questions | `Authorization` |

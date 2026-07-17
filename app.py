@@ -25,7 +25,7 @@ except ImportError:
     docx2txt = None
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
-app.secret_key = os.getenv("SECRET_KEY", "skillpath-dev-secret-key-2024")
+app.secret_key = os.getenv("SECRET_KEY", "hiremate-dev-secret-key-2024")
 CORS(app)
 
 # ──────────────────────────────────────────────
@@ -1096,7 +1096,7 @@ def mentor_mode():
 
     client = Groq()
     if mentor_type == "coding":
-        system_prompt = """You are an elite AI Career Mentor from a top tech company, integrated into SkillPath.
+        system_prompt = """You are an elite AI Career Mentor from a top tech company, integrated into HireMate.
 Your job is to analyze the user's coding standings across their coding profiles (LeetCode, GitHub, Codeforces, Codementor) and their algorithmic (DSA) performance data, and generate a premium, personalized Coding Growth Report.
 
 Strict Rules:

@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- SkillPath AI Engine — Self-Improving Recommendation Tables
+-- HireMate AI Engine — Self-Improving Recommendation Tables
 -- Run this in: Supabase Dashboard → SQL Editor → New Query → Run
 -- ═══════════════════════════════════════════════════════════════
 

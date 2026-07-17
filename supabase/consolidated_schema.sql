@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- SkillPath Database Schema — Unified Setup Script
+-- HireMate Database Schema — Unified Setup Script
 -- Paste this script into: Supabase Dashboard → SQL Editor → New Query → Run
 -- ═══════════════════════════════════════════════════════════════
 
