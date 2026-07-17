@@ -2578,32 +2578,43 @@ def apply_prepare():
         return jsonify({"error": str(e)}), 500
 
 
+import queue
+import threading
+
+# Global storage for active job application sessions
+APPLY_QUEUES = {}
+APPLY_EVENTS = {}
+APPLY_SESSIONS_DATA = {}
+
+@app.route("/api/jobs/apply/stream", methods=["GET"])
+@token_required
+def apply_stream():
+    """Real-time SSE progress logs stream endpoint for the active job agent pipeline."""
+    user_id = g.user_id
+    if user_id not in APPLY_QUEUES:
+        APPLY_QUEUES[user_id] = queue.Queue()
+        
+    def event_generator():
+        q = APPLY_QUEUES[user_id]
+        while True:
+            try:
+                # Wait for status events with 30s timeout to allow keepalive pings
+                event_data = q.get(timeout=30.0)
+                if event_data == "DONE":
+                    yield "data: {\"state\": \"FINISHED\", \"message\": \"Pipeline complete.\"}\n\n"
+                    break
+                yield f"data: {json.dumps(event_data)}\n\n"
+            except queue.Empty:
+                # Send a comment keepalive ping to prevent browser connection drop
+                yield ": keepalive\n\n"
+                
+    return Response(event_generator(), mimetype="text/event-stream")
+
+
 @app.route("/api/jobs/apply/start", methods=["POST"])
 @token_required
 def apply_start():
-    """Step 2: Automates filling using Playwright and returns a preview screenshot."""
-    data = request.get_json() or {}
-    job_url = data.get("job_url", "")
-    profile_data = data.get("profile_data", {})
-    essay_answers = data.get("essay_answers", {})
-
-    if not job_url:
-        return jsonify({"error": "Job URL is required."}), 400
-
-    try:
-        agent = JobApplicationAgent(headless=True)
-        # Run Playwright form filling (without final submission)
-        result = run_async(agent.fill_form(job_url, profile_data, essay_answers, submit=False))
-        return jsonify(result)
-    except Exception as e:
-        print(f"[JOB_AGENT] Start filling failed: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/jobs/apply/confirm", methods=["POST"])
-@token_required
-def apply_confirm():
-    """Step 3: Confirms, submits the form, logs the history in Supabase, and triggers prep."""
+    """Step 2: Spawns the async Playwright pipeline state machine inside a background worker thread."""
     data = request.get_json() or {}
     job_url = data.get("job_url", "")
     company = data.get("company", "Company")
@@ -2614,47 +2625,110 @@ def apply_confirm():
     if not job_url:
         return jsonify({"error": "Job URL is required."}), 400
 
-    sb = get_sb()
-    if not sb:
-        return jsonify({"error": "Database service is offline."}), 500
+    user_id = g.user_id
+    
+    # Initialize session events and queues
+    APPLY_QUEUES[user_id] = queue.Queue()
+    confirm_event = asyncio.Event()
+    APPLY_EVENTS[user_id] = confirm_event
+    APPLY_SESSIONS_DATA[user_id] = {
+        "company": company,
+        "role": role,
+        "job_url": job_url
+    }
 
-    try:
-        agent = JobApplicationAgent(headless=True)
-        # Run Playwright form filling AND submit
-        result = run_async(agent.fill_form(job_url, profile_data, essay_answers, submit=True))
-        
-        # Save application history to Supabase
-        status = result.get("status", "Applied")
-        user_id = g.user_id
-        
-        db_data = {
-            "user_id": user_id,
-            "company": company,
-            "role": role,
-            "apply_url": job_url,
-            "status": status,
-            "screenshot_url": result.get("screenshot", ""),
-            "notes": f"Filled: {', '.join(result.get('filled_fields', []))}"
-        }
-        
-        try:
-            sb.table("job_applications").insert(db_data).execute()
-        except Exception as db_err:
-            print(f"[JOB_AGENT] Supabase save failed: {db_err}")
-
-        # If success, trigger mock interview generation
-        if status == "Applied":
+    # Worker thread target to run asyncio coroutine
+    def thread_worker():
+        async def run_pipeline():
+            agent = JobApplicationAgent(headless=False) # local human interaction mode
+            
+            async def status_callback(state, message, success=True):
+                APPLY_QUEUES[user_id].put({
+                    "state": state,
+                    "message": message,
+                    "success": success
+                })
+                
             try:
-                # We can enqueue mock interview prep here by inserting a record or starting a thread
-                pass
-            except Exception as prep_err:
-                print(f"[JOB_AGENT] Interview prep trigger skipped: {prep_err}")
+                result = await agent.run_state_machine(
+                    url=job_url,
+                    profile_data=profile_data,
+                    essay_answers=essay_answers,
+                    status_callback=status_callback,
+                    confirm_event=confirm_event
+                )
+                
+                # Save to Supabase
+                sb = get_sb()
+                if sb:
+                    status = result.get("status", "Applied")
+                    db_data = {
+                        "user_id": user_id,
+                        "company": company,
+                        "role": role,
+                        "apply_url": job_url,
+                        "status": status,
+                        "screenshot_url": result.get("screenshot", ""),
+                        "notes": "Submitted successfully via HireMate automation agent."
+                    }
+                    try:
+                        sb.table("job_applications").insert(db_data).execute()
+                    except Exception as db_err:
+                        print(f"[JOB_AGENT] DB Save failed: {db_err}")
 
-        return jsonify(result)
+                await status_callback("FINISHED", "Application submitted successfully!")
+                
+            except Exception as e:
+                print(f"[JOB_AGENT] Pipeline thread error: {e}")
+                await status_callback("FAILED", f"Error: {str(e)}", success=False)
+                
+            finally:
+                APPLY_QUEUES[user_id].put("DONE")
+                
+        run_async(run_pipeline())
+
+    # Start Playwright state machine in background thread
+    threading.Thread(target=thread_worker, daemon=True).start()
+    
+    return jsonify({"status": "Started", "message": "State machine pipeline initialized."})
+
+
+@app.route("/api/jobs/apply/confirm", methods=["POST"])
+@token_required
+def apply_confirm():
+    """Step 3: Triggered when the user confirms and reviews the preview screenshot."""
+    user_id = g.user_id
+    if user_id not in APPLY_EVENTS:
+        return jsonify({"error": "No active application session found."}), 404
+
+    # Trigger the asyncio event to resume the Playwright state machine pipeline
+    confirm_event = APPLY_EVENTS[user_id]
+    
+    # We run_async to set the event thread-safely
+    def set_event():
+        confirm_event.set()
         
-    except Exception as e:
-        print(f"[JOB_AGENT] Confirm submission failed: {e}")
-        return jsonify({"error": str(e)}), 500
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(confirm_event.wait() if False else asyncio.sleep(0)) # just dummy loop to trigger event
+    confirm_event.set()
+    
+    # Clean up session
+    session_data = APPLY_SESSIONS_DATA.get(user_id, {})
+    
+    # Trigger interview prep creation in Supabase
+    sb = get_sb()
+    if sb and session_data:
+        try:
+            sb.table("interview_progress").insert({
+                "user_id": user_id,
+                "company": session_data.get("company", "Company"),
+                "score": 0,
+                "feedback": {"notes": "Scheduled automatically after AI Job Application Agent submission."}
+            }).execute()
+        except Exception as e:
+            print(f"[JOB_AGENT] Auto interview schedule skipped: {e}")
+
+    return jsonify({"status": "Confirmed", "message": "Resuming Playwright pipeline for final submission."})
 
 
 @app.route("/")

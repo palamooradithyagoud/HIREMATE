@@ -4257,11 +4257,17 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (jaCurrentStep === 2) {
             window.jaShowStep(3);
             
-            // Trigger filling & preview screenshot
+            // Reset step 3 UI
+            const consoleEl = document.getElementById("ja-progress-console");
+            consoleEl.innerHTML = '<div style="color: #64748b;">[SYSTEM_LOG] Initializing connection stream...</div>';
+            
             document.getElementById("ja-preview-screenshot").style.display = "none";
             document.getElementById("ja-preview-loading").style.display = "block";
             document.getElementById("ja-captcha-warning").style.display = "none";
             
+            document.getElementById("ja-filled-list").innerHTML = "";
+            document.getElementById("ja-unfilled-list").innerHTML = "";
+
             const profile_data = {
                 full_name: document.getElementById("ja-profile-name").value,
                 email: document.getElementById("ja-profile-email").value,
@@ -4277,68 +4283,103 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Alignment": document.getElementById("ja-essay-alignment").value
             };
 
+            // Start the SSE progress logs listener
+            const token = localStorage.getItem('supabase_access_token') || sessionStorage.getItem('supabase_access_token');
+            const eventSource = new EventSource(`/api/jobs/apply/stream?token=${encodeURIComponent(token)}`);
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Format and print log message
+                    const logLine = document.createElement("div");
+                    const icon = data.success ? "✓" : "⚠️";
+                    logLine.innerHTML = `<span style="color:${data.success ? '#10b981' : '#f59e0b'};">${icon} [${data.state}]</span> ${escapeHTML(data.message)}`;
+                    consoleEl.appendChild(logLine);
+                    consoleEl.scrollTop = consoleEl.scrollHeight;
+
+                    // Handle specific state updates
+                    if (data.state === "WAIT_FOR_USER_LOGIN") {
+                        showToast("Action required: Please sign in in the browser window.");
+                    } else if (data.state === "PREVIEW_APPLICATION") {
+                        // PREVIEW_APPLICATION carries JSON data containing fields, files, screenshot
+                        const payload = JSON.parse(data.message);
+                        
+                        if (payload.screenshot) {
+                            const img = document.getElementById("ja-preview-screenshot");
+                            img.src = payload.screenshot;
+                            img.style.display = "block";
+                            document.getElementById("ja-preview-loading").style.display = "none";
+                        }
+
+                        if (payload.captcha_detected) {
+                            document.getElementById("ja-captcha-warning").style.display = "flex";
+                        }
+
+                        // Render fields details lists
+                        const filledList = document.getElementById("ja-filled-list");
+                        const unfilledList = document.getElementById("ja-unfilled-list");
+
+                        if (payload.filled_fields && payload.filled_fields.length > 0) {
+                            payload.filled_fields.forEach(f => {
+                                const li = document.createElement("li");
+                                li.textContent = f;
+                                filledList.appendChild(li);
+                            });
+                        } else {
+                            filledList.innerHTML = "<li>No fields pre-filled</li>";
+                        }
+
+                        if (payload.unfilled_fields && payload.unfilled_fields.length > 0) {
+                            payload.unfilled_fields.forEach(f => {
+                                const li = document.createElement("li");
+                                li.textContent = f;
+                                unfilledList.appendChild(li);
+                            });
+                        } else {
+                            unfilledList.innerHTML = "<li>None</li>";
+                        }
+                    } else if (data.state === "FINISHED") {
+                        eventSource.close();
+                        showToast("Application submitted successfully!");
+                        window.jaShowStep(4);
+                    } else if (data.state === "FAILED") {
+                        eventSource.close();
+                        showToast("Application failed: " + data.message);
+                        document.getElementById("ja-preview-loading").innerHTML = `
+                            <span style="color:#ef4444; font-size:1.5rem;">⚠️</span>
+                            <p style="color:#ef4444; font-weight:600; margin-top:8px;">Pipeline Aborted</p>
+                            <p style="color:#94a3b8; font-size:0.75rem;">${escapeHTML(data.message)}</p>
+                        `;
+                    }
+                } catch (e) {
+                    console.error("[JOB_AGENT] Stream parse error:", e);
+                }
+            };
+
+            eventSource.onerror = (err) => {
+                console.error("[JOB_AGENT] SSE Stream error:", err);
+                eventSource.close();
+            };
+
+            // Trigger the start of the backend worker
             try {
                 const response = await authFetch("/api/jobs/apply/start", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         job_url: currentJobDetails.url,
+                        company: currentJobDetails.company,
+                        role: currentJobDetails.role,
                         profile_data,
                         essay_answers
                     })
                 });
 
-                if (!response.ok) throw new Error("Automation filling failed.");
-
-                const data = await response.json();
-                
-                // Show preview screenshot
-                if (data.screenshot) {
-                    const img = document.getElementById("ja-preview-screenshot");
-                    img.src = data.screenshot;
-                    img.style.display = "block";
-                    document.getElementById("ja-preview-loading").style.display = "none";
-                }
-
-                // Show captcha warning if active
-                if (data.captcha_detected) {
-                    document.getElementById("ja-captcha-warning").style.display = "flex";
-                }
-
-                // Render logs
-                const filledList = document.getElementById("ja-filled-list");
-                const unfilledList = document.getElementById("ja-unfilled-list");
-                filledList.innerHTML = "";
-                unfilledList.innerHTML = "";
-
-                if (data.filled_fields && data.filled_fields.length > 0) {
-                    data.filled_fields.forEach(f => {
-                        const li = document.createElement("li");
-                        li.textContent = f;
-                        filledList.appendChild(li);
-                    });
-                } else {
-                    filledList.innerHTML = "<li>No fields were matching auto-fill patterns</li>";
-                }
-
-                if (data.unfilled_fields && data.unfilled_fields.length > 0) {
-                    data.unfilled_fields.forEach(f => {
-                        const li = document.createElement("li");
-                        li.textContent = f;
-                        unfilledList.appendChild(li);
-                    });
-                } else {
-                    unfilledList.innerHTML = "<li>None</li>";
-                }
-
+                if (!response.ok) throw new Error("Could not start agent.");
             } catch (err) {
-                console.error("[JOB_AGENT] Automator error:", err);
-                showToast("Playwright automator error: " + err.message);
-                document.getElementById("ja-preview-loading").innerHTML = `
-                    <span style="color:#ef4444; font-size:1.5rem;">⚠️</span>
-                    <p style="color:#ef4444; font-weight:600; margin-top:8px;">Automation Failed</p>
-                    <p style="color:#94a3b8; font-size:0.75rem;">${err.message || 'Please check your connection and try again.'}</p>
-                `;
+                eventSource.close();
+                showToast("Failed to initialize Playwright: " + err.message);
             }
         }
     };
@@ -4350,53 +4391,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.jaSubmitConfirm = async () => {
-        // Change submit button to loading state
         const btnSubmit = document.getElementById("ja-btn-submit");
         btnSubmit.disabled = true;
         btnSubmit.textContent = "Submitting application... ⏳";
 
-        const profile_data = {
-            full_name: document.getElementById("ja-profile-name").value,
-            email: document.getElementById("ja-profile-email").value,
-            phone: document.getElementById("ja-profile-phone").value,
-            linkedin_profile: document.getElementById("ja-profile-linkedin").value,
-            github_profile: document.getElementById("ja-profile-github").value,
-            portfolio_url: document.getElementById("ja-profile-portfolio").value
-        };
-
-        const essay_answers = {
-            "Why Join": document.getElementById("ja-essay-why").value,
-            "Key Project": document.getElementById("ja-essay-project").value,
-            "Alignment": document.getElementById("ja-essay-alignment").value
-        };
-
         try {
             const response = await authFetch("/api/jobs/apply/confirm", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    job_url: currentJobDetails.url,
-                    company: currentJobDetails.company,
-                    role: currentJobDetails.role,
-                    profile_data,
-                    essay_answers
-                })
+                headers: { "Content-Type": "application/json" }
             });
 
-            if (!response.ok) throw new Error("Failed to submit form.");
-
-            const data = await response.json();
-            
-            if (data.status === "Applied" || data.status === "Pending Review") {
-                showToast("Application submitted successfully!");
-                window.jaShowStep(4);
-            } else {
-                throw new Error(data.error || "Submission rejected by target site.");
-            }
-
+            if (!response.ok) throw new Error("Submission resume failed.");
         } catch (err) {
-            console.error("[JOB_AGENT] Submission error:", err);
-            showToast("Submission failed: " + err.message);
+            showToast("Failed to send confirmation: " + err.message);
             btnSubmit.disabled = false;
             btnSubmit.textContent = "Confirm & Submit Application";
         }
