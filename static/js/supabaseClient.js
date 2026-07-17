@@ -23,7 +23,16 @@ window.fetch = async function (url, options = {}) {
             console.error("Failed to attach auth headers:", e);
         }
     }
-    return originalFetch(url, options);
+    const response = await originalFetch(url, options);
+    // Redirect to login-page on 401 response (unauthorized/expired token)
+    if (response.status === 401 && !url.includes('/login-page') && !url.includes('/config')) {
+        const sessionKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+        if (sessionKey) {
+            localStorage.removeItem(sessionKey);
+        }
+        window.location.href = '/login-page';
+    }
+    return response;
 };
 
 class DatabaseService {

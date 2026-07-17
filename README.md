@@ -52,7 +52,7 @@ graph TD
 ## 🌟 Core Pillars
 
 ### 1. Hybrid Skill & Certification Router
-- **Tier-1 Local Cache**: Instantly maps core topics (e.g. Python, Java, DSA) using pre-packaged, validated local datasets.
+- **Tier-1 Local Cache**: Instantly maps core topics (e.g. Python, C++, DSA) using pre-packaged, validated local datasets.
 - **Tier-2 YouTube Playlists fallback**: Fetches real-time learning playlists from YouTube Data API v3 with a local trust scoring system.
 - **Tier-3 AI Recommendation engine**: Triggers Llama-3.3 70B via Groq for niche subjects, structuring recommendations into 5 levels: *Primary, Fast Track, Interview, Project, and Advanced*.
 

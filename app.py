@@ -76,6 +76,26 @@ def token_required(f):
             g.user = res.user
             g.user_id = res.user.id
             g.user_email = res.user.email
+
+            # Ensure profile row exists in the public.profiles database table
+            try:
+                prof_check = sb.table("profiles").select("id").eq("id", g.user_id).execute()
+                if not prof_check.data:
+                    name = g.user.user_metadata.get("full_name") if g.user.user_metadata else None
+                    if not name:
+                        name = g.user.user_metadata.get("name") if g.user.user_metadata else None
+                    if not name:
+                        name = g.user_email.split("@")[0].capitalize()
+                    
+                    sb.table("profiles").insert({
+                        "id": g.user_id,
+                        "full_name": name,
+                        "email": g.user_email
+                    }).execute()
+                    print(f"[AUTH] Auto-created database profile in token_required for user {g.user_id}.")
+            except Exception as prof_err:
+                print(f"[AUTH] Failed to check/create database profile in token_required: {prof_err}")
+
         except Exception as e:
             print(f"[AUTH] Token verification failed: {e}")
             return jsonify({"error": "Unauthorized: Session is invalid or expired."}), 401
@@ -396,16 +416,13 @@ CSV_SKILL_MAP = {
     "c_datastructures_tutorials.csv": ["c data structures", "data structures in c", "c datastructures"],
     "cpp_tutorials.csv":              ["c++", "cpp", "cplusplus", "c plus plus"],
     "dsa_in_cpp.csv":                 ["dsa in c++", "dsa cpp", "data structures algorithms c++", "dsa in cpp"],
-    "dsa_in_java.csv":                ["dsa in java", "dsa java", "data structures algorithms java"],
     "dsa_in_python__1_.csv":          ["dsa in python", "dsa python", "data structures algorithms python"],
-    "java_tutorials.csv":             ["java", "java programming", "java tutorials"],
     "python_tutorials.csv":           ["python", "python programming", "python tutorials"],
 }
 
 # Add certification files to the map
 CERT_SKILL_MAP = {
     "Top_10_Python_Certifications-v2.csv": ["python", "python programming"],
-    "Top_10_Java_Certifications-v4.csv":   ["java", "java programming"],
     "Top_10_CPP_Certifications-v3.csv":    ["c++", "cpp", "cplusplus"],
     "Top_10_C_Certifications-v2.csv":      ["c", "c programming"],
 }
@@ -1619,8 +1636,14 @@ def get_leetcode_stats():
         
         if not leetcode_profile:
             # Fetch user's profile to get leetcode_profile from DB
-            res = sb.table("profiles").select("leetcode_profile").eq("id", g.user_id).single().execute()
-            leetcode_profile = res.data.get("leetcode_profile") if res.data else None
+            try:
+                res = sb.table("profiles").select("leetcode_profile").eq("id", g.user_id).single().execute()
+                leetcode_profile = res.data.get("leetcode_profile") if res.data else None
+            except Exception as e:
+                if "PGRST116" in str(e) or "contains 0 rows" in str(e):
+                    leetcode_profile = None
+                else:
+                    raise e
             
         if not leetcode_profile:
             return jsonify({"status": "no_profile", "message": "LeetCode profile not configured."})
@@ -1697,6 +1720,8 @@ def get_user_profile():
             return jsonify(res.data)
         return jsonify({})
     except Exception as e:
+        if "PGRST116" in str(e) or "contains 0 rows" in str(e):
+            return jsonify({})
         print(f"[PROFILES] Backend get profile failed: {e}")
         return jsonify({"error": str(e)}), 500
 
@@ -2493,10 +2518,6 @@ def run_async(coro):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     return loop.run_until_complete(coro)
-
-# Register AI Job Application Agent Blueprint
-from routes.application_routes import application_bp
-app.register_blueprint(application_bp)
 
 # Register Enterprise AI Voice Mock Interview Blueprint
 from routes.interview_routes import interview_routes_bp
