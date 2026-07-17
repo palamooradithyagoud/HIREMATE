@@ -2572,6 +2572,214 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ── Jobs Board Logic ──────────────────────────────────────────
+    const jobsData = [
+        {
+            id: 1,
+            title: "AI Software Engineer",
+            company: "Stripe",
+            logo: "💳",
+            location: "San Francisco, CA (Hybrid)",
+            type: "Full-time",
+            salary: "$145,000 - $190,000",
+            matchScore: 96,
+            tags: ["Python", "Flask", "LLM APIs", "PostgreSQL"],
+            description: "Orchestrate multi-agent LLM systems and build AI features for Stripe's global developer dashboard."
+        },
+        {
+            id: 2,
+            title: "Backend Engineer - Platform",
+            company: "Vercel",
+            logo: "▲",
+            location: "Remote (US/Europe)",
+            type: "Remote",
+            salary: "$130,000 - $175,000",
+            matchScore: 92,
+            tags: ["Node.js", "Serverless", "APIs", "Redis"],
+            description: "Scale high-throughput edge functions and optimize runtime build systems for Vercel's hosting platform."
+        },
+        {
+            id: 3,
+            title: "Frontend UI Developer",
+            company: "Linear",
+            logo: "📐",
+            location: "Remote (Global)",
+            type: "Remote",
+            salary: "$110,000 - $150,000",
+            matchScore: 88,
+            tags: ["Vanilla JS", "CSS Grid", "Animations", "UI/UX"],
+            description: "Craft highly performant, animation-rich dashboard interfaces using standard web technologies with sub-50ms render latency."
+        },
+        {
+            id: 4,
+            title: "Data Engineer - Analytics",
+            company: "Supabase",
+            logo: "⚡",
+            location: "Singapore (On-site)",
+            type: "Full-time",
+            salary: "$95,000 - $140,000",
+            matchScore: 85,
+            tags: ["PostgreSQL", "Supabase", "SQL Schema", "Python"],
+            description: "Build robust real-time database migration schemas and analytical pipelines for millions of developer projects."
+        },
+        {
+            id: 5,
+            title: "Machine Learning Researcher",
+            company: "Groq",
+            logo: "🚀",
+            location: "Mountain View, CA",
+            type: "Full-time",
+            salary: "$160,000 - $210,000",
+            matchScore: 78,
+            tags: ["Python", "Llama 3", "AI Inference", "CUDA"],
+            description: "Design ultra-low latency inference strategies and model execution paths for custom LPU compiler pipelines."
+        },
+        {
+            id: 6,
+            title: "Software Engineering Intern",
+            company: "GitHub",
+            logo: "🐙",
+            location: "Remote (US)",
+            type: "Internship",
+            salary: "$50 - $75 / hr",
+            matchScore: 74,
+            tags: ["Git", "GitHub Actions", "Ruby", "TypeScript"],
+            description: "Contribute to open-source developer tooling and enhance collaborative workflows on the core platform."
+        }
+    ];
+
+    let savedJobIds = JSON.parse(localStorage.getItem('hm_saved_jobs') || '[]');
+
+    const initJobsBoard = () => {
+        renderJobsList();
+        
+        // Wire up filter event listeners
+        const searchInput = document.getElementById('job-search-input');
+        const typeFilter = document.getElementById('job-type-filter');
+        const sortFilter = document.getElementById('job-sort-filter');
+        
+        if (searchInput && !searchInput.dataset.wired) {
+            searchInput.addEventListener('input', filterJobs);
+            searchInput.dataset.wired = 'true';
+        }
+        if (typeFilter && !typeFilter.dataset.wired) {
+            typeFilter.addEventListener('change', filterJobs);
+            typeFilter.dataset.wired = 'true';
+        }
+        if (sortFilter && !sortFilter.dataset.wired) {
+            sortFilter.addEventListener('change', filterJobs);
+            sortFilter.dataset.wired = 'true';
+        }
+    };
+
+    const filterJobs = () => {
+        const query = document.getElementById('job-search-input').value.toLowerCase().trim();
+        const type = document.getElementById('job-type-filter').value;
+        const sortBy = document.getElementById('job-sort-filter').value;
+
+        let filtered = jobsData.filter(job => {
+            const matchesQuery = job.title.toLowerCase().includes(query) || 
+                                 job.company.toLowerCase().includes(query) || 
+                                 job.tags.some(t => t.toLowerCase().includes(query)) ||
+                                 job.description.toLowerCase().includes(query);
+            
+            const matchesType = type === 'all' || job.type === type;
+            
+            return matchesQuery && matchesType;
+        });
+
+        if (sortBy === 'match') {
+            filtered.sort((a, b) => b.matchScore - a.matchScore);
+        } else if (sortBy === 'salary') {
+            const getVal = s => parseInt(s.replace(/[^0-9]/g, '')) || 0;
+            filtered.sort((a, b) => getVal(b.salary) - getVal(a.salary));
+        }
+
+        renderJobsList(filtered);
+    };
+
+    const renderJobsList = (jobsToRender = jobsData) => {
+        const grid = document.getElementById('jobs-list-grid');
+        if (!grid) return;
+        
+        grid.innerHTML = '';
+        
+        // Update stats
+        document.getElementById('total-jobs-count').textContent = jobsToRender.length;
+        document.getElementById('saved-jobs-count').textContent = savedJobIds.length;
+
+        if (jobsToRender.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-muted);">
+                    <p style="font-size: 1.1rem; font-weight: 600;">No matching jobs found</p>
+                    <p style="font-size: 0.85rem; margin-top: 4px;">Try adjusting your keywords or filters.</p>
+                </div>
+            `;
+            return;
+        }
+
+        jobsToRender.forEach(job => {
+            const isSaved = savedJobIds.includes(job.id);
+            const card = document.createElement('div');
+            card.className = 'job-card';
+            
+            const badgeClass = job.matchScore >= 90 ? 'job-match-badge high-match' : 'job-match-badge';
+            
+            card.innerHTML = `
+                <div>
+                    <div class="job-card-top">
+                        <div class="job-company-info">
+                            <div class="job-company-logo">${job.logo}</div>
+                            <div class="job-company-details">
+                                <span class="job-company-name">${job.company}</span>
+                                <h3 class="job-title">${job.title}</h3>
+                            </div>
+                        </div>
+                        <span class="${badgeClass}">🎯 ${job.matchScore}% Match</span>
+                    </div>
+                    <p class="job-desc">${job.description}</p>
+                    <div class="job-tags">
+                        ${job.tags.map(t => `<span class="job-tag">${t}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="job-meta">
+                    <div class="job-details-group">
+                        <span class="job-location">📍 ${job.location}</span>
+                        <span class="job-salary">${job.salary}</span>
+                    </div>
+                    <div class="job-actions">
+                        <button class="btn-job-save ${isSaved ? 'saved' : ''}" onclick="window.toggleSaveJob(${job.id}, this)" title="${isSaved ? 'Unsave Job' : 'Save Job'}">
+                            ❤️
+                        </button>
+                        <button class="btn-job-apply" onclick="window.applyToJob('${job.title.replace(/'/g, "\\'")}', '${job.company.replace(/'/g, "\\'")}')">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    };
+
+    window.toggleSaveJob = (jobId, btn) => {
+        const index = savedJobIds.indexOf(jobId);
+        if (index > -1) {
+            savedJobIds.splice(index, 1);
+            btn.classList.remove('saved');
+            showToast('💔 Job removed from saved list');
+        } else {
+            savedJobIds.push(jobId);
+            btn.classList.add('saved');
+            showToast('❤️ Job saved to profile');
+        }
+        localStorage.setItem('hm_saved_jobs', JSON.stringify(savedJobIds));
+        document.getElementById('saved-jobs-count').textContent = savedJobIds.length;
+    };
+
+    window.applyToJob = (title, company) => {
+        showToast(`🚀 Application submitted to ${company} for ${title}!`);
+    };
+
     // ── Sidebar Router Logic ──────────────────────────────────────
     const navItems = document.querySelectorAll('.sidebar .nav-item');
     const views = document.querySelectorAll('.content-view');
@@ -2587,6 +2795,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Trigger view-specific dynamic logic
         if (targetViewId === 'view-dashboard') {
             renderDashboardProgress();
+        } else if (targetViewId === 'view-jobs') {
+            initJobsBoard();
         } else if (targetViewId === 'view-practice') {
             enterDsaPrep();
         } else if (targetViewId === 'view-resume') {
