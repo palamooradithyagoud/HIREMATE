@@ -38,12 +38,14 @@ graph TD
     Server <-->|PDF / DOCX Uploads| Bucket[(Supabase Storage)]
     Server <-->|Sub-100ms Inference| Groq[Groq AI: Llama-3.3 70B]
     Server <-->|Search Queries| YT[YouTube Data API v3]
+    Server <-->|Jobs Search API| JSearch[RapidAPI: JSearch v5]
 ```
 
 1. **SPA Client**: Serves the user interface with a glassmorphic dashboard (Nebula Design System), using Chart.js for data visualization.
-2. **Flask Backend**: Processes incoming REST requests, manages authentication middleware via JWT checks, and coordinates search logic and AI execution.
+2. **Flask Backend**: Processes incoming REST requests, manages authentication middleware via JWT checks, and coordinates search logic, jobs matching, and AI execution.
 3. **Supabase Cloud**: Persists profile history, DSA completion states, resume scores, and custom checklists. Incorporates Postgres Row-Level Security (RLS) policies for user data isolation.
 4. **Groq AI Engine**: Evaluates resume transcripts, grades ATS matches, and constructs personalized roadmap workflows.
+5. **JSearch API**: Integrates via RapidAPI to query live tech job openings based on location and keywords.
 
 ---
 
@@ -69,6 +71,12 @@ graph TD
   $$\text{PRI} = (\text{DSA\_Score} \times 0.40) + (\text{Resume\_Score} \times 0.30) + (\text{Playlist\_Progress} \times 0.15) + (\text{Projects\_Score} \times 0.15)$$
 - **Competency Radar**: Automatically benchmarks candidate profiles against baseline FAANG role performance indexes (e.g. Intern, L3, L4, L5).
 
+### 4. Real-Time JSearch Job Matcher
+- **Live Job Queries**: Queries the JSearch v5 API to fetch developer positions directly from Google for Jobs search indexes.
+- **Filtering & Caching**: Supports job filtering by type (Full-time, Remote, Internship) and sorting by highest match score or salary.
+- **Direct Application Redirects**: Direct routing to the original application portal.
+- **Bookmark System**: Saves opportunities locally on user profiles using `localStorage` bookmarks.
+
 ---
 
 ## 🛠️ Technology Stack
@@ -79,6 +87,7 @@ graph TD
 | **AI Inference** | [Groq SDK](https://groq.com/) (`llama-3.3-70b-versatile`) | Ultra-fast token generation for resumes and roadmaps. |
 | **Database & Storage** | [Supabase](https://supabase.com/) (PostgreSQL 15) | Relational database, Object storage, and RLS policies. |
 | **Authentication** | Supabase Auth + JWT Bearer Tokens | Stateless JWT-based authentication for backend endpoints. |
+| **Jobs Aggregation** | [RapidAPI JSearch v5](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch) | Fetches live developer listings and salary metadata. |
 | **Frontend UI** | HTML5 · CSS3 · Vanilla JS | Glassmorphic, dark-themed responsive UI dashboard. |
 | **Charting Engine** | [Chart.js](https://www.chartjs.org/) | Renders the radar graphs and chronological progress history. |
 
@@ -185,6 +194,7 @@ All requests to endpoints (excluding `/login`, `/signup`, and `/login-page`) req
 | `POST` | `/generate-competency-audit` | Generate a career readiness report via AI | `Authorization` |
 | `POST` | `/sync-user-projects` | Save portfolio list to Supabase | `Authorization` |
 | `POST` | `/sync-active-roadmap` | Save active checklist roadmap checklist | `Authorization` |
+| `GET` | `/api/jobs` | Retrieve live, filtered developer listings from JSearch API | `Authorization` |
 
 ---
 
