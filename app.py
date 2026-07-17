@@ -1424,6 +1424,7 @@ def get_config():
 
 @app.route("/logout")
 def logout():
+    session.clear()
     return redirect("/login-page")
 
 @app.route("/get-user-session", methods=["GET"])
@@ -1449,6 +1450,21 @@ def get_user_session():
                 print(f"[AUTH] Auto-created database profile for OAuth user {g.user_id}.")
         except Exception as e:
             print(f"[AUTH] Failed to auto-create database profile for OAuth user: {e}")
+
+    # Send a login greeting email using Resend (only once per fresh session)
+    if session.get("last_login_user") != g.user_id:
+        session["last_login_user"] = g.user_id
+        try:
+            from services.resend_service import send_login_greeting
+            import threading
+            # Dispatched in a background thread to prevent blocking login API performance
+            threading.Thread(
+                target=send_login_greeting,
+                args=(g.user_email, name),
+                daemon=True
+            ).start()
+        except Exception as email_err:
+            print(f"[AUTH ERROR] Failed to dispatch greeting email thread: {email_err}")
 
     return jsonify({
         "logged_in": True,
