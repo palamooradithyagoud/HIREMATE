@@ -2301,6 +2301,31 @@ def get_interview_history():
         return jsonify([])
 
 
+@app.route("/api/jobs", methods=["GET"])
+@token_required
+def get_jobs():
+    query = request.args.get("query", "Software Engineer")
+    page = request.args.get("page", "1")
+    
+    url = "https://jsearch.p.rapidapi.com/search"
+    headers = {
+        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY", "3ef47649demshb84e9924c2d17ffp13b456jsn33544a7e9f6d"),
+        "x-rapidapi-host": "jsearch.p.rapidapi.com"
+    }
+    querystring = {"query": query, "page": page, "num_pages": "1"}
+    
+    try:
+        response = requests.get(url, headers=headers, params=querystring, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            print(f"[JOBS] API error status {response.status_code}: {response.text}")
+            return jsonify({"error": f"Failed to fetch jobs: status {response.status_code}"}), response.status_code
+    except Exception as e:
+        print(f"[JOBS] Request exception: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/")
 def index():
     pass

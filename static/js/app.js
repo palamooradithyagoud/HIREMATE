@@ -2573,94 +2573,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Jobs Board Logic ──────────────────────────────────────────
-    const jobsData = [
-        {
-            id: 1,
-            title: "AI Software Engineer",
-            company: "Stripe",
-            logo: "💳",
-            location: "San Francisco, CA (Hybrid)",
-            type: "Full-time",
-            salary: "$145,000 - $190,000",
-            matchScore: 96,
-            tags: ["Python", "Flask", "LLM APIs", "PostgreSQL"],
-            description: "Orchestrate multi-agent LLM systems and build AI features for Stripe's global developer dashboard."
-        },
-        {
-            id: 2,
-            title: "Backend Engineer - Platform",
-            company: "Vercel",
-            logo: "▲",
-            location: "Remote (US/Europe)",
-            type: "Remote",
-            salary: "$130,000 - $175,000",
-            matchScore: 92,
-            tags: ["Node.js", "Serverless", "APIs", "Redis"],
-            description: "Scale high-throughput edge functions and optimize runtime build systems for Vercel's hosting platform."
-        },
-        {
-            id: 3,
-            title: "Frontend UI Developer",
-            company: "Linear",
-            logo: "📐",
-            location: "Remote (Global)",
-            type: "Remote",
-            salary: "$110,000 - $150,000",
-            matchScore: 88,
-            tags: ["Vanilla JS", "CSS Grid", "Animations", "UI/UX"],
-            description: "Craft highly performant, animation-rich dashboard interfaces using standard web technologies with sub-50ms render latency."
-        },
-        {
-            id: 4,
-            title: "Data Engineer - Analytics",
-            company: "Supabase",
-            logo: "⚡",
-            location: "Singapore (On-site)",
-            type: "Full-time",
-            salary: "$95,000 - $140,000",
-            matchScore: 85,
-            tags: ["PostgreSQL", "Supabase", "SQL Schema", "Python"],
-            description: "Build robust real-time database migration schemas and analytical pipelines for millions of developer projects."
-        },
-        {
-            id: 5,
-            title: "Machine Learning Researcher",
-            company: "Groq",
-            logo: "🚀",
-            location: "Mountain View, CA",
-            type: "Full-time",
-            salary: "$160,000 - $210,000",
-            matchScore: 78,
-            tags: ["Python", "Llama 3", "AI Inference", "CUDA"],
-            description: "Design ultra-low latency inference strategies and model execution paths for custom LPU compiler pipelines."
-        },
-        {
-            id: 6,
-            title: "Software Engineering Intern",
-            company: "GitHub",
-            logo: "🐙",
-            location: "Remote (US)",
-            type: "Internship",
-            salary: "$50 - $75 / hr",
-            matchScore: 74,
-            tags: ["Git", "GitHub Actions", "Ruby", "TypeScript"],
-            description: "Contribute to open-source developer tooling and enhance collaborative workflows on the core platform."
-        }
-    ];
-
+    let currentJobsList = [];
     let savedJobIds = JSON.parse(localStorage.getItem('hm_saved_jobs') || '[]');
 
     const initJobsBoard = () => {
-        renderJobsList();
+        const searchInput = document.getElementById('job-search-input');
+        
+        if (currentJobsList.length === 0) {
+            const initialQuery = (searchInput && searchInput.value.trim()) || "Software Engineer";
+            fetchLatestJobs(initialQuery);
+        } else {
+            renderJobsList(currentJobsList);
+        }
         
         // Wire up filter event listeners
-        const searchInput = document.getElementById('job-search-input');
+        const searchBtn = document.getElementById('btn-job-search');
         const typeFilter = document.getElementById('job-type-filter');
         const sortFilter = document.getElementById('job-sort-filter');
         
         if (searchInput && !searchInput.dataset.wired) {
-            searchInput.addEventListener('input', filterJobs);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const query = searchInput.value.trim() || "Software Engineer";
+                    fetchLatestJobs(query);
+                }
+            });
             searchInput.dataset.wired = 'true';
+        }
+        if (searchBtn && !searchBtn.dataset.wired) {
+            searchBtn.addEventListener('click', () => {
+                const query = searchInput.value.trim() || "Software Engineer";
+                fetchLatestJobs(query);
+            });
+            searchBtn.dataset.wired = 'true';
         }
         if (typeFilter && !typeFilter.dataset.wired) {
             typeFilter.addEventListener('change', filterJobs);
@@ -2672,20 +2617,112 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const fetchLatestJobs = async (searchQuery = "Software Engineer") => {
+        const grid = document.getElementById('jobs-list-grid');
+        if (!grid) return;
+
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                <div class="spinner" style="margin: 0 auto 16px; width: 40px; height: 40px; border: 4px solid var(--border-color); border-top-color: var(--primary); border-radius: 50%;"></div>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Fetching live jobs from JSearch API...</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch(`/api/jobs?query=${encodeURIComponent(searchQuery)}`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch jobs from API server.");
+            }
+            
+            const result = await response.json();
+            const apiJobs = result.data || [];
+            
+            currentJobsList = apiJobs.map((job, idx) => {
+                let matchScore = 80 + Math.floor(Math.random() * 18);
+                if (idx % 3 === 0) matchScore = 95;
+                
+                let jobType = "Full-time";
+                if (job.job_employment_type) {
+                    const t = job.job_employment_type.toLowerCase();
+                    if (t.includes("full")) jobType = "Full-time";
+                    else if (t.includes("part")) jobType = "Part-time";
+                    else if (t.includes("contract")) jobType = "Contract";
+                    else if (t.includes("intern")) jobType = "Internship";
+                }
+                
+                let loc = "Remote";
+                if (job.job_is_remote) {
+                    loc = "Remote";
+                } else {
+                    const city = job.job_city || "";
+                    const state = job.job_state || "";
+                    const country = job.job_country || "";
+                    loc = [city, state, country].filter(Boolean).join(", ") || "United States";
+                }
+
+                let salary = "Salary Undisclosed";
+                if (job.job_min_salary && job.job_max_salary) {
+                    const symbol = job.job_salary_currency === "USD" ? "$" : (job.job_salary_currency || "");
+                    salary = `${symbol}${job.job_min_salary.toLocaleString()} - ${symbol}${job.job_max_salary.toLocaleString()}`;
+                } else if (job.job_max_salary) {
+                    const symbol = job.job_salary_currency === "USD" ? "$" : (job.job_salary_currency || "");
+                    salary = `Up to ${symbol}${job.job_max_salary.toLocaleString()}`;
+                }
+
+                let tags = ["Development"];
+                if (job.job_required_skills && job.job_required_skills.length > 0) {
+                    tags = job.job_required_skills.slice(0, 4);
+                } else {
+                    const titleLower = job.job_title.toLowerCase();
+                    const candidates = ["Python", "React", "Node", "Go", "AWS", "SQL", "Java", "Docker", "Flask", "TypeScript", "C++", "Frontend", "Backend"];
+                    const found = candidates.filter(c => titleLower.includes(c.toLowerCase()));
+                    if (found.length > 0) {
+                        tags = found.slice(0, 4);
+                    }
+                }
+
+                const logo = job.employer_logo ? `<img src="${job.employer_logo}" alt="${job.employer_name}" style="width:100%; height:100%; object-fit:contain; border-radius:6px;" onerror="this.outerHTML='💼'"/>` : "💼";
+
+                return {
+                    id: job.job_id || `job_${idx}`,
+                    title: job.job_title,
+                    company: job.employer_name,
+                    logo: logo,
+                    location: loc,
+                    type: jobType,
+                    salary: salary,
+                    matchScore: matchScore,
+                    tags: tags,
+                    description: job.job_description ? job.job_description.substring(0, 180) + "..." : "No description provided.",
+                    applyLink: job.job_apply_link
+                };
+            });
+
+            renderJobsList(currentJobsList);
+        } catch (err) {
+            console.error("[JOBS] Fetch error:", err);
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-muted);">
+                    <p style="font-size: 1.1rem; font-weight: 600; color: #ef4444;">Failed to fetch live jobs</p>
+                    <p style="font-size: 0.85rem; margin-top: 4px;">${err.message || 'Please check your internet connection or API keys.'}</p>
+                    <button class="btn-job-apply" style="margin-top: 16px;" onclick="window.retryJobsFetch()">Retry</button>
+                </div>
+            `;
+        }
+    };
+
+    window.retryJobsFetch = () => {
+        const searchInput = document.getElementById('job-search-input');
+        const query = (searchInput && searchInput.value.trim()) || "Software Engineer";
+        fetchLatestJobs(query);
+    };
+
     const filterJobs = () => {
-        const query = document.getElementById('job-search-input').value.toLowerCase().trim();
         const type = document.getElementById('job-type-filter').value;
         const sortBy = document.getElementById('job-sort-filter').value;
 
-        let filtered = jobsData.filter(job => {
-            const matchesQuery = job.title.toLowerCase().includes(query) || 
-                                 job.company.toLowerCase().includes(query) || 
-                                 job.tags.some(t => t.toLowerCase().includes(query)) ||
-                                 job.description.toLowerCase().includes(query);
-            
-            const matchesType = type === 'all' || job.type === type;
-            
-            return matchesQuery && matchesType;
+        let filtered = currentJobsList.filter(job => {
+            return type === 'all' || job.type === type;
         });
 
         if (sortBy === 'match') {
@@ -2698,7 +2735,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderJobsList(filtered);
     };
 
-    const renderJobsList = (jobsToRender = jobsData) => {
+    const renderJobsList = (jobsToRender = currentJobsList) => {
         const grid = document.getElementById('jobs-list-grid');
         if (!grid) return;
         
@@ -2712,7 +2749,7 @@ document.addEventListener('DOMContentLoaded', () => {
             grid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-muted);">
                     <p style="font-size: 1.1rem; font-weight: 600;">No matching jobs found</p>
-                    <p style="font-size: 0.85rem; margin-top: 4px;">Try adjusting your keywords or filters.</p>
+                    <p style="font-size: 0.85rem; margin-top: 4px;">Try adjusting your filters.</p>
                 </div>
             `;
             return;
@@ -2748,10 +2785,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="job-salary">${job.salary}</span>
                     </div>
                     <div class="job-actions">
-                        <button class="btn-job-save ${isSaved ? 'saved' : ''}" onclick="window.toggleSaveJob(${job.id}, this)" title="${isSaved ? 'Unsave Job' : 'Save Job'}">
+                        <button class="btn-job-save ${isSaved ? 'saved' : ''}" onclick="window.toggleSaveJob('${job.id}', this)" title="${isSaved ? 'Unsave Job' : 'Save Job'}">
                             ❤️
                         </button>
-                        <button class="btn-job-apply" onclick="window.applyToJob('${job.title.replace(/'/g, "\\'")}', '${job.company.replace(/'/g, "\\'")}')">
+                        <button class="btn-job-apply" onclick="window.applyToJob('${job.applyLink ? job.applyLink.replace(/'/g, "\\'") : '#'}')">
                             Apply
                         </button>
                     </div>
@@ -2776,8 +2813,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('saved-jobs-count').textContent = savedJobIds.length;
     };
 
-    window.applyToJob = (title, company) => {
-        showToast(`🚀 Application submitted to ${company} for ${title}!`);
+    window.applyToJob = (url) => {
+        if (url && url.startsWith('http')) {
+            window.open(url, '_blank');
+        } else {
+            showToast('🚀 Applying to job...');
+        }
     };
 
     // ── Sidebar Router Logic ──────────────────────────────────────
