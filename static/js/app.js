@@ -2635,7 +2635,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const result = await response.json();
-            const apiJobs = result.data || [];
+            const apiJobs = (result.data && result.data.jobs) || (Array.isArray(result.data) ? result.data : []);
             
             currentJobsList = apiJobs.map((job, idx) => {
                 let matchScore = 80 + Math.floor(Math.random() * 18);

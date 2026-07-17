@@ -2307,9 +2307,9 @@ def get_jobs():
     query = request.args.get("query", "Software Engineer")
     page = request.args.get("page", "1")
     
-    url = "https://jsearch.p.rapidapi.com/search"
+    url = "https://jsearch.p.rapidapi.com/search-v2"
     headers = {
-        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY", "3ef47649demshb84e9924c2d17ffp13b456jsn33544a7e9f6d"),
+        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY", "f64a9f413emsh9ec9731173c93f4p11a020jsn1bc1252068e5"),
         "x-rapidapi-host": "jsearch.p.rapidapi.com"
     }
     querystring = {"query": query, "page": page, "num_pages": "1"}
