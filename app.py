@@ -2410,7 +2410,7 @@ def get_jobs():
     params = {"query": query, "page": page, "num_pages": "1"}
 
     try:
-        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response = requests.get(url, headers=headers, params=params, timeout=25)
         if response.status_code == 200:
             resp_data = response.json()
 

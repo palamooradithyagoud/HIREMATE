@@ -9,6 +9,11 @@
       "use": "@vercel/static"
     }
   ],
+  "functions": {
+    "app.py": {
+      "maxDuration": 60
+    }
+  },
   "routes": [
     {
       "src": "/static/(.*)",
@@ -20,4 +25,3 @@
     }
   ]
 }
- 
