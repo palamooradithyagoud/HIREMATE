@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 from flask import Blueprint, request, jsonify, g
 from interview.interview_agent import InterviewAgent
@@ -61,18 +62,49 @@ def interview_start():
 
 @interview_routes_bp.route("/api/interview/chat", methods=["POST"])
 def interview_chat():
-    """Exchanges candidate voice transcript text for the next mock question voice audio."""
+    """Exchanges candidate voice transcript text OR uploaded audio recording file for next question."""
     from app import token_required
     
     @token_required
     def handler():
-        data = request.get_json() or {}
-        user_response = data.get("user_response", "")
-        
         user_id = g.user_id
         if user_id not in ACTIVE_INTERVIEWS:
-            return jsonify({"error": "No active mock interview session found. Please start first."}), 404
+            return jsonify({"error": "No active mock interview session found."}), 404
             
+        user_response = ""
+        
+        # Check if an audio file was uploaded
+        if "audio_file" in request.files:
+            audio_file = request.files["audio_file"]
+            base_dir = r"c:\PROJECTS\SKILL PATH\AI-CATALYST-main\AI-CATALYST-main"
+            temp_dir = os.path.join(base_dir, "data", "temp_recordings")
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            temp_path = os.path.join(temp_dir, f"rec_{user_id}_{int(time.time())}.wav")
+            audio_file.save(temp_path)
+            
+            try:
+                from voice.voice_manager import VoiceManager
+                vm = VoiceManager()
+                user_response = vm.convert_voice_to_text(temp_path)
+                logger.info(f"Transcribed response from uploaded file: '{user_response}'")
+            except Exception as e:
+                logger.error(f"Failed transcription step: {e}")
+            finally:
+                # Clean up local file
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except Exception:
+                        pass
+        else:
+            data = request.get_json(silent=True) or {}
+            user_response = data.get("user_response", "")
+
+        user_response = (user_response or "").strip()
+        if not user_response:
+            return jsonify({"error": "Failed to extract speech response. Try typing using manual fallback or speak again."}), 400
+
         session = ACTIVE_INTERVIEWS[user_id]
         agent = session["agent"]
         profile = session["profile"]
@@ -80,7 +112,7 @@ def interview_chat():
         role = session["role"]
 
         try:
-            # Process chat turn
+            # Process conversation turn
             next_question = agent.chat_turn(user_response, profile, company, role)
             
             # Synthesize voice audio
@@ -88,7 +120,8 @@ def interview_chat():
             
             return jsonify({
                 "response_text": next_question,
-                "audio_url": audio_url
+                "audio_url": audio_url,
+                "transcribed_text": user_response
             })
         except Exception as e:
             logger.error(f"Error processing interview chat turn: {e}")

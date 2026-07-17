@@ -3159,90 +3159,79 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- ENTERPRISE VOICE MOCK INTERVIEW IMPLEMENTATION ---
-    let speechRecognition = null;
-    let voiceTranscriptAccumulated = "";
-    let isSpeechListening = false;
-    let currentRecruiterVoiceURL = "";
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecordingAudio = false;
     let localStream = null;
 
-    if ('webkitSpeechRecognition' in window) {
-        speechRecognition = new webkitSpeechRecognition();
-        speechRecognition.continuous = true;
-        speechRecognition.interimResults = true;
-        speechRecognition.lang = 'en-US';
-
-        speechRecognition.onresult = (event) => {
-            let interimTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    voiceTranscriptAccumulated += event.results[i][0].transcript + ' ';
-                } else {
-                    interimTranscript += event.results[i][0].transcript;
-                }
-            }
-            const currentText = voiceTranscriptAccumulated + interimTranscript;
-            const subtitleBox = document.getElementById("voice-subtitles-box");
-            if (subtitleBox) {
-                subtitleBox.textContent = currentText || "Listening to your response...";
-            }
-        };
-
-        speechRecognition.onerror = (event) => {
-            console.error("Speech Recognition Error:", event.error);
-            showToast("Mic input error: " + event.error);
-        };
-
-        speechRecognition.onend = () => {
-            const stateLabel = document.getElementById("voice-state-desc-label");
-            if (stateLabel && isSpeechListening) {
-                stateLabel.textContent = "Mic idle. Press Mic to resume speaking.";
-            }
-        };
-    }
-
-    window.toggleSpeechListen = () => {
-        if (!speechRecognition) {
-            showToast("Speech recognition is not supported in this browser. Please use Google Chrome.");
-            return;
-        }
-
+    window.toggleSpeechListen = async () => {
         const micBtn = document.getElementById("btn-voice-mic-toggle");
         const stateLabel = document.getElementById("voice-state-desc-label");
 
-        if (!isSpeechListening) {
-            // Start listening
-            voiceTranscriptAccumulated = "";
-            speechRecognition.start();
-            isSpeechListening = true;
-            if (micBtn) {
-                micBtn.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
-                micBtn.style.boxShadow = "0 6px 20px rgba(239, 68, 68, 0.4)";
+        if (!isRecordingAudio) {
+            // Start recording candidate audio
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioChunks = [];
+                
+                // Select supported MIME type
+                let options = { mimeType: 'audio/webm' };
+                if (!MediaRecorder.isTypeSupported('audio/webm')) {
+                    options = { mimeType: 'audio/ogg' };
+                }
+                if (!MediaRecorder.isTypeSupported('audio/ogg')) {
+                    options = {};
+                }
+                
+                mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/wav' });
+                    
+                    // Stop tracks
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // Send to backend voice recruiter
+                    submitVoiceAudioFile(audioBlob);
+                };
+                
+                mediaRecorder.start();
+                isRecordingAudio = true;
+                
+                if (micBtn) {
+                    micBtn.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+                    micBtn.style.boxShadow = "0 6px 20px rgba(239, 68, 68, 0.4)";
+                }
+                if (stateLabel) {
+                    stateLabel.textContent = "Listening to you... Click Mic again to finish speaking.";
+                }
+                const avatar = document.getElementById("interviewer-avatar-container");
+                if (avatar) avatar.style.transform = "scale(0.95)";
+            } catch (err) {
+                console.error("Failed to start MediaRecorder:", err);
+                showToast("Microphone access denied or error: " + err.message);
             }
-            if (stateLabel) {
-                stateLabel.textContent = "Listening to you... Click Mic again to submit response.";
-            }
-            const avatar = document.getElementById("interviewer-avatar-container");
-            if (avatar) avatar.style.transform = "scale(0.95)";
         } else {
-            // Stop listening and send to AI recruiter
-            speechRecognition.stop();
-            isSpeechListening = false;
+            // Stop recording
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
+            isRecordingAudio = false;
+            
             if (micBtn) {
                 micBtn.style.background = "linear-gradient(135deg, var(--primary) 0%, #6366f1 100%)";
                 micBtn.style.boxShadow = "0 6px 20px rgba(99, 102, 241, 0.3)";
             }
             if (stateLabel) {
-                stateLabel.textContent = "Processing response...";
+                stateLabel.textContent = "Transcribing and processing your answer...";
             }
             const avatar = document.getElementById("interviewer-avatar-container");
             if (avatar) avatar.style.transform = "scale(1)";
-
-            const responseText = voiceTranscriptAccumulated.trim();
-            if (responseText) {
-                submitVoiceResponse(responseText);
-            } else {
-                showToast("No speech input detected. Please try speaking again.");
-            }
         }
     };
 
@@ -3282,9 +3271,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
-            // Output subtitles
+            // Display recruiter subtitles
             const subtitleBox = document.getElementById("voice-subtitles-box");
-            if (subtitleBox) subtitleBox.textContent = data.response_text;
+            if (subtitleBox) {
+                subtitleBox.innerHTML = `
+                    <div style="color:var(--text-sub); font-size:0.9rem; margin-bottom:6px;">You: "${escapeHTML(text)}"</div>
+                    <div>Alex: "${escapeHTML(data.response_text)}"</div>
+                `;
+            }
 
             const stateLabel = document.getElementById("voice-state-desc-label");
             if (stateLabel) stateLabel.textContent = "Recruiter Speaking...";
@@ -3301,6 +3295,49 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error("Submit voice response failed:", e);
             showToast(e.message || "Failed to contact voice recruiter.");
+        }
+    };
+
+    const submitVoiceAudioFile = async (audioBlob) => {
+        const formData = new FormData();
+        formData.append("audio_file", audioBlob, "recording.wav");
+        
+        try {
+            const res = await authFetch('/api/interview/chat', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("Failed response submission");
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            // Display subtitles
+            const subtitleBox = document.getElementById("voice-subtitles-box");
+            if (subtitleBox) {
+                subtitleBox.innerHTML = `
+                    <div style="color:var(--text-sub); font-size:0.9rem; margin-bottom:6px;">You: "${escapeHTML(data.transcribed_text)}"</div>
+                    <div>Alex: "${escapeHTML(data.response_text)}"</div>
+                `;
+            }
+
+            const stateLabel = document.getElementById("voice-state-desc-label");
+            if (stateLabel) stateLabel.textContent = "Recruiter Speaking...";
+
+            // Play voice stream
+            if (data.audio_url) {
+                const audio = document.getElementById("voice-audio-element");
+                if (audio) {
+                    audio.src = data.audio_url;
+                    audio.play();
+                }
+            }
+
+        } catch (e) {
+            console.error("Submit voice audio failed:", e);
+            showToast("Failed to process speech. Please click Mic to try again.");
+            const stateLabel = document.getElementById("voice-state-desc-label");
+            if (stateLabel) stateLabel.textContent = "Error transcribing. Click Mic to retry.";
         }
     };
 
