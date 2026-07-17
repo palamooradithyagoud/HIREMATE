@@ -1629,6 +1629,22 @@ def get_leetcode_stats():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@app.route("/api/profile", methods=["GET"])
+@token_required
+def get_user_profile():
+    sb = get_sb()
+    if not sb:
+        return jsonify({"error": "DB unavailable"}), 500
+    try:
+        res = sb.table("profiles").select("*").eq("id", g.user_id).single().execute()
+        if res.data:
+            return jsonify(res.data)
+        return jsonify({})
+    except Exception as e:
+        print(f"[PROFILES] Backend get profile failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/save-coding-profiles", methods=["POST"])
 @token_required
 def save_coding_profiles():

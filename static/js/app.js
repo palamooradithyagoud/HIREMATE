@@ -3462,10 +3462,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let codeforces = "";
         let codementor = "";
 
-        // 1. Try DB first
-        if (currentUserId && window.db) {
-            try {
-                const profile = await window.db.getProfile(currentUserId);
+        // 1. Try DB first via backend API endpoint
+        try {
+            const res = await fetch('/api/profile');
+            if (res.ok) {
+                const profile = await res.json();
                 if (profile) {
                     name = profile.full_name || "";
                     email = profile.email || "";
@@ -3483,9 +3484,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     codeforces = profile.codeforces_profile || "";
                     codementor = profile.codementor_profile || "";
                 }
-            } catch (e) {
-                console.warn("DB profile load failed (expected if columns not migrated yet):", e);
             }
+        } catch (e) {
+            console.warn("DB profile load failed via API endpoint:", e);
         }
 
         // 2. Fallback to localStorage
