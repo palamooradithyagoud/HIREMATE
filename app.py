@@ -1425,6 +1425,38 @@ def get_config():
         "SUPABASE_ANON_KEY": clean(os.getenv("SUPABASE_ANON_KEY"))
     })
 
+@app.route("/api/db-health", methods=["GET"])
+def db_health():
+    """Diagnostic endpoint — shows DB connection status and env var presence."""
+    url  = (os.getenv("SUPABASE_URL") or "").strip().strip('"').strip("'")
+    key  = (os.getenv("SUPABASE_SERVICE_KEY") or "").strip().strip('"').strip("'")
+    anon = (os.getenv("SUPABASE_ANON_KEY") or "").strip().strip('"').strip("'")
+
+    result = {
+        "SUPABASE_URL_set":         bool(url),
+        "SUPABASE_URL_preview":     url[:40] + "..." if url else "MISSING",
+        "SUPABASE_SERVICE_KEY_set": bool(key),
+        "SUPABASE_SERVICE_KEY_len": len(key),
+        "SUPABASE_ANON_KEY_set":    bool(anon),
+        "db_client_initialized":    False,
+        "db_ping_ok":               False,
+        "db_error":                 None
+    }
+
+    sb = get_sb()
+    if sb:
+        result["db_client_initialized"] = True
+        try:
+            ping = sb.table("profiles").select("id").limit(1).execute()
+            result["db_ping_ok"] = True
+        except Exception as e:
+            result["db_error"] = str(e)
+    else:
+        result["db_error"] = "get_sb() returned None — check SUPABASE_URL and SUPABASE_SERVICE_KEY"
+
+    return jsonify(result)
+
+
 @app.route("/logout")
 def logout():
     session.clear()
