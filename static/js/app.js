@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove it
             savedPlaylists.splice(index, 1);
             if (btnEl) {
-                btnEl.textContent = '💾 Save';
+                btnEl.textContent = ' Save';
                 btnEl.classList.remove('saved');
             }
             showToast('Removed from saved playlists');
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             savedPlaylists.push(playlist);
             if (btnEl) {
-                btnEl.textContent = '✅ Saved';
+                btnEl.textContent = ' Saved';
                 btnEl.classList.add('saved');
                 btnEl.disabled = false;
             }
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Also update any visible buttons on screen
         document.querySelectorAll(`.btn-save-playlist[data-url="${url}"]`).forEach(btn => {
-            btn.textContent = '💾 Save';
+            btn.textContent = ' Save';
             btn.classList.remove('saved');
         });
     };
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="saved-playlist-actions" style="margin-left: auto;">
                         <label class="saved-playlist-check">
                             <input type="checkbox" class="playlist-complete-checkbox" data-url="${escapeHTML(p.url)}" ${p.completed ? 'checked' : ''}>
-                            <span>${p.completed ? '✅ Done' : 'Mark Done'}</span>
+                            <span>${p.completed ? ' Done' : 'Mark Done'}</span>
                         </label>
                         <a href="${p.url}" target="_blank" class="btn-watch" style="padding: 6px 12px; font-size: 0.75rem; border-radius: var(--radius-sm);">Watch</a>
                         <button class="btn-remove-saved" data-url="${escapeHTML(p.url)}">Delete</button>
@@ -497,12 +497,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (checklist) {
             checklist.innerHTML = '';
             const phases = [
-                { key: 'beginner', label: '🌱 Beginner Phase' },
-                { key: 'intermediate', label: '🔥 Intermediate Phase' },
-                { key: 'advanced', label: '🚀 Advanced Phase' },
-                { key: 'projects', label: '🛠️ Projects to Build' },
+                { key: 'beginner', label: ' Beginner Phase' },
+                { key: 'intermediate', label: ' Intermediate Phase' },
+                { key: 'advanced', label: ' Advanced Phase' },
+                { key: 'projects', label: ' Projects to Build' },
                 { key: 'certifications', label: 'ðŸ† Recommended Certifications' },
-                { key: 'interview_prep', label: '💼 Interview Prep Focus' }
+                { key: 'interview_prep', label: ' Interview Prep Focus' }
             ];
 
             phases.forEach(phase => {
@@ -851,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.tier === 0) {
                 tierIndicator.textContent = 'âš¡ Instant Result: Retrieved from AI Memory';
             } else if (data.tier === 1) {
-                tierIndicator.textContent = '🚀 Curated Result: Trusted CSV Dataset';
+                tierIndicator.textContent = ' Curated Result: Trusted CSV Dataset';
             } else if (data.tier >= 3) {
                 tierIndicator.textContent = 'ðŸ§  AI-Ranked Result: Groq Intelligence Engine';
             } else {
@@ -892,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const savedList = getSavedPlaylists();
         const isSaved = savedList.some(p => p.url === data.url);
-        const saveBtnLabel = isSaved ? '✅ Saved' : '💾 Save';
+        const saveBtnLabel = isSaved ? ' Saved' : ' Save';
         const saveBtnClass = isSaved ? 'btn-save-playlist saved' : 'btn-save-playlist';
 
         const isCert = !data.url.includes('youtube.com');
@@ -919,8 +919,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <h3 class="card-title">${escapeHTML(data.title)}</h3>
             <span class="channel-name">${escapeHTML(data.channel)}</span>
-            <p class="card-desc" style="margin-top: 10px;"><strong>💡 Why:</strong> ${escapeHTML(data.why_selected)}</p>
-            <p class="card-desc"><strong>â±ï¸ Time:</strong> ${escapeHTML(data.estimated_time)} | <strong>🎯 Outcome:</strong> ${escapeHTML(data.expected_outcome)}</p>
+            <p class="card-desc" style="margin-top: 10px;"><strong> Why:</strong> ${escapeHTML(data.why_selected)}</p>
+            <p class="card-desc"><strong>â±ï¸ Time:</strong> ${escapeHTML(data.estimated_time)} | <strong> Outcome:</strong> ${escapeHTML(data.expected_outcome)}</p>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: auto;">
                 ${actionButtonsHtml}
             </div>
@@ -1015,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     trackingBtnContainer.innerHTML = `
                         <div style="display:flex; gap:12px; align-items:center;">
                             <button id="btn-track-this-roadmap" class="btn-outline-primary" style="flex:1; background:rgba(37,99,235,0.05); color:var(--primary); border-color:var(--primary); font-weight:700; pointer-events:none; cursor:default; height:44px; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:var(--radius-md);">
-                                <span>✓ Currently Tracking Progress</span>
+                                <span> Currently Tracking Progress</span>
                             </button>
                             <button id="btn-learning-untrack" class="btn-outline-danger" style="color:var(--danger); border-color:var(--danger); height:44px; padding:0 16px; border-radius:var(--radius-md); font-weight:600; cursor:pointer; background:transparent; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">
                                 Stop Tracking
@@ -1025,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     trackingBtnContainer.innerHTML = `
                         <button id="btn-track-this-roadmap" class="btn-primary" style="width:100%; height:44px; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.9rem; border-radius:var(--radius-md);">
-                            🗺️ Track this Learning Roadmap
+                             Track this Learning Roadmap
                         </button>
                     `;
                 }
@@ -1049,12 +1049,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 roadmapContent.appendChild(checklistContainer);
 
                 const phases = [
-                    { key: 'beginner', label: '🌱 Beginner Phase' },
-                    { key: 'intermediate', label: '🔥 Intermediate Phase' },
-                    { key: 'advanced', label: '🚀 Advanced Phase' },
-                    { key: 'projects', label: '🛠️ Projects to Build' },
+                    { key: 'beginner', label: ' Beginner Phase' },
+                    { key: 'intermediate', label: ' Intermediate Phase' },
+                    { key: 'advanced', label: ' Advanced Phase' },
+                    { key: 'projects', label: ' Projects to Build' },
                     { key: 'certifications', label: 'ðŸ† Recommended Certifications' },
-                    { key: 'interview_prep', label: '💼 Interview Prep Focus' }
+                    { key: 'interview_prep', label: ' Interview Prep Focus' }
                 ];
 
                 phases.forEach(phase => {
@@ -1152,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const savedList = getSavedPlaylists();
         const isSaved = savedList.some(p => p.url === url);
-        const saveBtnLabel = isSaved ? '✅ Saved' : '💾 Save';
+        const saveBtnLabel = isSaved ? ' Saved' : ' Save';
         const saveBtnClass = isSaved ? 'btn-save-playlist saved' : 'btn-save-playlist';
 
         const actionButtonsHtml = isCert ? `
@@ -1387,7 +1387,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         data-diff="${difficulty}"
                         data-topic="${topic}"
                         ${isSolved ? 'checked' : ''}>
-                    <span class="solve-label">${isSolved ? '✅ Solved' : 'Mark as Solved'}</span>
+                    <span class="solve-label">${isSolved ? ' Solved' : 'Mark as Solved'}</span>
                 </div>
 
                 <h3 class="card-title">${escapeHTML(name)}</h3>
@@ -1417,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkbox = card.querySelector('.solve-checkbox');
             checkbox.addEventListener('change', (e) => {
                 toggleSolved({ link, name, difficulty, topic }, e.target.checked);
-                card.querySelector('.solve-label').textContent = e.target.checked ? '✅ Solved' : 'Mark as Solved';
+                card.querySelector('.solve-label').textContent = e.target.checked ? ' Solved' : 'Mark as Solved';
                 updateCommandCenter();
             });
 
@@ -2597,7 +2597,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await syncProjects();
             renderProjectsList();
-            showToast('✅ Project added successfully!');
+            showToast(' Project added successfully!');
         });
     }
 
@@ -2710,7 +2710,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                const logo = job.employer_logo ? `<img src="${job.employer_logo}" alt="${job.employer_name}" style="width:100%; height:100%; object-fit:contain; border-radius:6px;" onerror="this.outerHTML='💼'"/>` : "💼";
+                const logo = job.employer_logo ? `<img src="${job.employer_logo}" alt="${job.employer_name}" style="width:100%; height:100%; object-fit:contain; border-radius:6px;" onerror="this.outerHTML=''"/>` : "";
 
                 return {
                     id: job.job_id || `job_${idx}`,
@@ -2801,7 +2801,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <h3 class="job-title">${job.title}</h3>
                             </div>
                         </div>
-                        <span class="${badgeClass}">🎯 ${job.matchScore}% Match</span>
+                        <span class="${badgeClass}"> ${job.matchScore}% Match</span>
                     </div>
                     <p class="job-desc">${job.description}</p>
                     <div class="job-tags">
@@ -2810,12 +2810,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="job-meta">
                     <div class="job-details-group">
-                        <span class="job-location">📍  ${job.location}</span>
+                        <span class="job-location">  ${job.location}</span>
                         <span class="job-salary">${job.salary}</span>
                     </div>
                     <div class="job-actions" style="display: flex; gap: 8px;">
                         <button class="btn-job-save ${isSaved ? 'saved' : ''}" onclick="window.toggleSaveJob('${job.id}', this)" title="${isSaved ? 'Unsave Job' : 'Save Job'}" style="flex-shrink:0;">
-                            ❤️
+                            
                         </button>
                         <button class="btn-job-apply" onclick="window.applyToJob('${job.applyLink ? job.applyLink.replace(/'/g, "\\'") : '#'}')" style="padding: 6px 12px; font-size: 0.8rem;">
                             Apply Direct
@@ -2832,7 +2832,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (index > -1) {
             savedJobIds.splice(index, 1);
             btn.classList.remove('saved');
-            showToast('💔 Job removed from saved list');
+            showToast(' Job removed from saved list');
         } else {
             savedJobIds.push(jobId);
             btn.classList.add('saved');
@@ -2846,7 +2846,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (url && url.startsWith('http')) {
             window.open(url, '_blank');
         } else {
-            showToast('🚀 Applying to job...');
+            showToast(' Applying to job...');
         }
     };
 
@@ -2997,12 +2997,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${data.wasted_time.map(s => `<span class="pill-badge" style="background:#fee2e2;color:#ef4444;border-color:transparent;">${escapeHTML(s)}</span>`).join('')}
                         </div>` : ''}
                         ${ data.must_learn_now && data.must_learn_now.length ? `
-                        <p style="color:var(--text-sub); font-size:0.85rem; margin-bottom:6px; font-weight:600;">✅ Learn these NOW:</p>
+                        <p style="color:var(--text-sub); font-size:0.85rem; margin-bottom:6px; font-weight:600;"> Learn these NOW:</p>
                         <ul style="padding-left:16px; color:var(--text-main); font-size:0.85rem; margin-bottom:12px;">
                             ${data.must_learn_now.map(i => `<li><strong>${escapeHTML(i.skill)}</strong> N/A ${escapeHTML(i.reason)}</li>`).join('')}
                         </ul>` : ''}
                         ${ data.improvement_suggestions && data.improvement_suggestions.length ? `
-                        <p style="color:var(--text-sub); font-size:0.85rem; margin-bottom:6px; font-weight:600;">💡 How to do it better:</p>
+                        <p style="color:var(--text-sub); font-size:0.85rem; margin-bottom:6px; font-weight:600;"> How to do it better:</p>
                         <ul style="padding-left:16px; color:var(--text-main); font-size:0.85rem; margin-bottom:12px; line-height:1.5;">
                             ${data.improvement_suggestions.map(s => `<li><strong>${escapeHTML(s.action)}</strong> N/A ${escapeHTML(s.how_to_do_better)}</li>`).join('')}
                         </ul>` : ''}
@@ -3010,7 +3010,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${escapeHTML(data.brutal_truth)}
                         </p>
                         <div style="background:var(--primary-light); border-left:3px solid var(--primary); padding:12px 16px; border-radius:8px;">
-                            <p style="color:var(--primary); font-size:0.85rem; margin:0; font-weight:600;">🎯 This week: ${escapeHTML(data.action_this_week)}</p>
+                            <p style="color:var(--primary); font-size:0.85rem; margin:0; font-weight:600;"> This week: ${escapeHTML(data.action_this_week)}</p>
                         </div>
                     </div>
                 `;
@@ -3809,7 +3809,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (leetcode) {
             if (summaryLeetCode) {
-                summaryLeetCode.textContent = "Loading stats... 🔄🔄";
+                summaryLeetCode.textContent = "Loading stats... ";
                 summaryLeetCode.style.color = "var(--text-muted)";
             }
             try {
@@ -3825,7 +3825,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data && data.status === 'success' && data.stats) {
                         const solved = data.stats.All || 0;
                         if (summaryLeetCode) {
-                            summaryLeetCode.textContent = `${solved} Solved ✅`;
+                            summaryLeetCode.textContent = `${solved} Solved `;
                             summaryLeetCode.style.color = "var(--primary)";
                         }
                     } else {
@@ -3849,14 +3849,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             if (summaryLeetCode) {
-                summaryLeetCode.textContent = "Not configured 🛑🛑";
+                summaryLeetCode.textContent = "Not configured ";
                 summaryLeetCode.style.color = "var(--danger)";
             }
         }
 
         if (github) {
             if (summaryGitHub) {
-                summaryGitHub.textContent = "Loading repos... 🔄🔄";
+                summaryGitHub.textContent = "Loading repos... ";
                 summaryGitHub.style.color = "var(--text-muted)";
             }
             try {
@@ -3869,7 +3869,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await res.json();
                     const repos = data.public_repos !== undefined ? data.public_repos : 0;
                     if (summaryGitHub) {
-                        summaryGitHub.textContent = `${repos} Repos ✅`;
+                        summaryGitHub.textContent = `${repos} Repos `;
                         summaryGitHub.style.color = "var(--primary)";
                     }
                 } else {
@@ -3887,7 +3887,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             if (summaryGitHub) {
-                summaryGitHub.textContent = "Not configured 🛑🛑";
+                summaryGitHub.textContent = "Not configured ";
                 summaryGitHub.style.color = "var(--danger)";
             }
         }
@@ -3966,9 +3966,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (dbSaved) {
-            showToast('✅ Profile saved successfully to Cloud & local storage!');
+            showToast(' Profile saved successfully to Cloud & local storage!');
         } else {
-            showToast('✅ Profile saved locally (Cloud sync failed or pending schema migration).');
+            showToast(' Profile saved locally (Cloud sync failed or pending schema migration).');
         }
 
         if (leetcode) {
@@ -4016,7 +4016,7 @@ document.addEventListener('DOMContentLoaded', () => {
         name = name.charAt(0).toUpperCase() + name.slice(1);
         const initials = name.substring(0, 2).toUpperCase();
 
-        document.getElementById('welcome-title-banner').textContent = `Welcome back, ${name}! 👋👋`;
+        document.getElementById('welcome-title-banner').textContent = `Welcome back, ${name}!`;
         document.getElementById('user-avatar-initials').textContent = initials;
 
         const profileName = document.getElementById('profile-user-name');
@@ -4159,7 +4159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <!-- Header Banner -->
                         <div style="background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 16px; padding: 28px; color: white; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);">
                             <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; display: flex; align-items: center; gap: 10px;">
-                                🔥 Coding Growth Report
+                                 Coding Growth Report
                             </h2>
                             <p style="margin: 0; font-size: 0.95rem; opacity: 0.9; font-weight: 500;">
                                 Premium Technical Alignment & Placement Readiness Audit
@@ -4169,7 +4169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <!-- 1. Performance Snapshot -->
                         <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
                             <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                📍Š 1. Performance Snapshot
+                                Š 1. Performance Snapshot
                             </h3>
                             <p style="font-size: 0.925rem; line-height: 1.6; color: var(--text-sub); margin: 0; padding: 14px; background: rgba(99, 102, 241, 0.04); border-left: 4px solid #6366f1; border-radius: 0 8px 8px 0; font-style: italic;">
                                 "${escapeHTML(snapshot.summary)}"
@@ -4209,13 +4209,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <!-- 2. Strength Analysis -->
                         <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
                             <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                🌟 2. Strength Analysis
+                                 2. Strength Analysis
                             </h3>
                             <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
                                 ${strengths.map(s => `
                                     <div style="background: var(--bg-main); border: 1px solid var(--border); padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px;">
                                         <strong style="color: var(--success); font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
-                                            <span>✔</span> ${escapeHTML(s.title)}
+                                            <span></span> ${escapeHTML(s.title)}
                                         </strong>
                                         <p style="margin: 0; font-size: 0.875rem; color: var(--text-sub); line-height: 1.5;">${escapeHTML(s.why)}</p>
                                     </div>
@@ -4226,23 +4226,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         <!-- 3. Skill Gap Analysis -->
                         <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
                             <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                🎯 3. High-Impact Areas for Growth
+                                 3. High-Impact Areas for Growth
                             </h3>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                                 <div style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.1); padding: 16px; border-radius: 10px; display: flex; flex-direction: column; gap: 10px;">
-                                    <strong style="color: #ef4444; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.02em;">🔴 Critical</strong>
+                                    <strong style="color: #ef4444; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.02em;"> Critical</strong>
                                     <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                                         ${(growthAreas.critical || []).map(topic => `<span class="pill-badge" style="background:#fef2f2; color:#ef4444; border-color:transparent; font-size:0.75rem;">${escapeHTML(topic)}</span>`).join('')}
                                     </div>
                                 </div>
                                 <div style="background: rgba(245, 158, 11, 0.03); border: 1px solid rgba(245, 158, 11, 0.1); padding: 16px; border-radius: 10px; display: flex; flex-direction: column; gap: 10px;">
-                                    <strong style="color: #f59e0b; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.02em;">🟡 Important</strong>
+                                    <strong style="color: #f59e0b; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.02em;"> Important</strong>
                                     <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                                         ${(growthAreas.important || []).map(topic => `<span class="pill-badge" style="background:#fffbeb; color:#d97706; border-color:transparent; font-size:0.75rem;">${escapeHTML(topic)}</span>`).join('')}
                                     </div>
                                 </div>
                                 <div style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.1); padding: 16px; border-radius: 10px; display: flex; flex-direction: column; gap: 10px;">
-                                    <strong style="color: #3b82f6; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.02em;">🔵 Optional</strong>
+                                    <strong style="color: #3b82f6; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.02em;"> Optional</strong>
                                     <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                                         ${(growthAreas.optional || []).map(topic => `<span class="pill-badge" style="background:#eff6ff; color:#2563eb; border-color:transparent; font-size:0.75rem;">${escapeHTML(topic)}</span>`).join('')}
                                     </div>
@@ -4253,7 +4253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <!-- 4. Interview Readiness Assessment -->
                         <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
                             <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                💼 4. Interview Readiness Assessment
+                                 4. Interview Readiness Assessment
                             </h3>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex-wrap: wrap;">
                                 <div style="display: flex; flex-direction: column; gap: 14px;">
@@ -4284,7 +4284,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <!-- 5. Personalized Roadmap -->
                         <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
                             <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                📅 5. 30-Day Personalized Action Plan
+                                 5. 30-Day Personalized Action Plan
                             </h3>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
                                 ${["week_1", "week_2", "week_3", "week_4"].map((wk, idx) => `
@@ -4302,7 +4302,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex-wrap: wrap;">
                             <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
                                 <h4 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                    💡 6. AI Insights
+                                     6. AI Insights
                                 </h4>
                                 <ul style="padding-left: 18px; margin: 0; font-size: 0.85rem; color: var(--text-sub); display: flex; flex-direction: column; gap: 8px; line-height: 1.5;">
                                     ${insights.map(item => `<li>${escapeHTML(item)}</li>`).join('')}
@@ -4310,7 +4310,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px; background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.02), rgba(168, 85, 247, 0.02)); justify-content: center; border: 1px dashed rgba(99,102,241,0.25);">
                                 <h4 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                    ✨ 7. Growth Motivation
+                                     7. Growth Motivation
                                 </h4>
                                 <p style="margin: 0; font-size: 0.875rem; color: var(--text-sub); line-height: 1.6; font-style: italic;">
                                     "${escapeHTML(motivation)}"
@@ -4321,16 +4321,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <!-- 8. Visual Dashboard Suggestions -->
                         <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
                             <h3 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                🎨 8. Visual Dashboard Cards Recommendations
+                                 8. Visual Dashboard Cards Recommendations
                             </h3>
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
                                 ${[
                                     { title: "Achievement Card", text: dbCards.achievement_card || "ðŸ† Setup achievements details" },
-                                    { title: "Growth Score Card", text: dbCards.growth_score_card || "📍ˆ Track scores weekly" },
-                                    { title: "Interview Readiness Card", text: dbCards.interview_readiness_card || "🎯 Monitor placement status" },
+                                    { title: "Growth Score Card", text: dbCards.growth_score_card || "ˆ Track scores weekly" },
+                                    { title: "Interview Readiness Card", text: dbCards.interview_readiness_card || " Monitor placement status" },
                                     { title: "Next Milestone Card", text: dbCards.next_milestone_card || "âš¡ Reach next level goals" },
-                                    { title: "30-Day Roadmap Card", text: dbCards.roadmap_card || "📅 Review action planning daily" },
-                                    { title: "Streak Card", text: dbCards.streak_card || "🔥 Keep coding consistency" }
+                                    { title: "30-Day Roadmap Card", text: dbCards.roadmap_card || " Review action planning daily" },
+                                    { title: "Streak Card", text: dbCards.streak_card || " Keep coding consistency" }
                                 ].map(card => `
                                     <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 4px;">
                                         <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">${escapeHTML(card.title)}</span>

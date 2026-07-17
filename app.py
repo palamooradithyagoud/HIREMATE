@@ -61,29 +61,39 @@ def token_required(f):
         if not token:
             token = request.args.get("token")
             
-        if not token:
-            return jsonify({"error": "Authorization token is missing."}), 401
-        
         sb = get_sb()
-        if not sb:
-            return jsonify({"error": "Database service is unavailable."}), 500
-            
-        try:
-            res = sb.auth.get_user(token)
-            if not res or not res.user:
-                return jsonify({"error": "Invalid or expired session token."}), 401
-            
-            g.user = res.user
-            g.user_id = res.user.id
-            g.user_email = res.user.email
+        user_authenticated = False
 
-            # Ensure profile row exists in the public.profiles database table
+        if token and sb:
+            try:
+                res = sb.auth.get_user(token)
+                if res and res.user:
+                    g.user = res.user
+                    g.user_id = res.user.id
+                    g.user_email = res.user.email
+                    user_authenticated = True
+            except Exception as e:
+                print(f"[AUTH] Token verification failed: {e}. Falling back to guest.")
+
+        if not user_authenticated:
+            # Guest mode fallback: use a fixed guest UUID and profile details
+            class MockUser:
+                def __init__(self):
+                    self.id = "00000000-0000-0000-0000-000000000000"
+                    self.email = "guest@example.com"
+                    self.user_metadata = {"full_name": "Guest User"}
+            
+            g.user = MockUser()
+            g.user_id = g.user.id
+            g.user_email = g.user.email
+            print(f"[AUTH] Authenticated as guest user ({g.user_id})")
+
+        # Ensure profile row exists in the public.profiles database table
+        if sb:
             try:
                 prof_check = sb.table("profiles").select("id").eq("id", g.user_id).execute()
                 if not prof_check.data:
                     name = g.user.user_metadata.get("full_name") if g.user.user_metadata else None
-                    if not name:
-                        name = g.user.user_metadata.get("name") if g.user.user_metadata else None
                     if not name:
                         name = g.user_email.split("@")[0].capitalize()
                     
@@ -95,10 +105,6 @@ def token_required(f):
                     print(f"[AUTH] Auto-created database profile in token_required for user {g.user_id}.")
             except Exception as prof_err:
                 print(f"[AUTH] Failed to check/create database profile in token_required: {prof_err}")
-
-        except Exception as e:
-            print(f"[AUTH] Token verification failed: {e}")
-            return jsonify({"error": "Unauthorized: Session is invalid or expired."}), 401
             
         return f(*args, **kwargs)
     return decorated
@@ -1435,7 +1441,7 @@ def get_questions():
 
 @app.route("/login-page")
 def login_page():
-    return app.send_static_file("login.html")
+    return redirect("/")
 
 @app.route("/config", methods=["GET"])
 def get_config():
@@ -1482,7 +1488,7 @@ def db_health():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/login-page")
+    return redirect("/")
 
 @app.route("/get-user-session", methods=["GET"])
 @token_required

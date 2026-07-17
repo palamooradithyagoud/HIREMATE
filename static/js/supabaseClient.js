@@ -30,7 +30,7 @@ window.fetch = async function (url, options = {}) {
         if (sessionKey) {
             localStorage.removeItem(sessionKey);
         }
-        window.location.href = '/login-page';
+        console.warn("Unauthorized API access (401). Bypassing login-page redirect.");
     }
     return response;
 };

@@ -1,1485 +1,1508 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HireMate — Premium Career Accelerator</title>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-01N4B95WZ5"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>HireMate — Premium Career Accelerator</title>
+ <!-- Google tag (gtag.js) -->
+ <script async src="https://www.googletagmanager.com/gtag/js?id=G-01N4B95WZ5"></script>
+ <script>
+ window.dataLayer = window.dataLayer || [];
+ function gtag(){dataLayer.push(arguments);}
+ gtag('js', new Date());
 
-      gtag('config', 'G-01N4B95WZ5');
-    </script>
-    <!-- SEO -->
-    <meta name="description" content="Discover curated YouTube playlists, professional certifications, and company-specific interview prep. AI-powered career recommendations.">
-    <!-- Chart.js for Advanced Analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <!-- Route Guard: Fast check for active Supabase Auth session token -->
-    <script>
-      (function() {
-        // If we are currently handling an OAuth/Supabase redirection callback,
-        // bypass the route guard to let the Supabase SDK parse the tokens.
-        if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
-          return;
-        }
-        // Find the Supabase auth token key and validate it contains a real access_token
-        const sessionKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
-        let isValid = false;
-        if (sessionKey) {
-          try {
-            const raw = localStorage.getItem(sessionKey);
-            const parsed = raw ? JSON.parse(raw) : null;
-            if (parsed && parsed.access_token) {
-              isValid = true;
-            }
-          } catch (e) { /* malformed session — treat as logged out */ }
-        }
-        if (!isValid) {
-          window.location.replace('/login-page');
-        }
-      })();
-    </script>
+ gtag('config', 'G-01N4B95WZ5');
+ </script>
+ <!-- SEO -->
+ <meta name="description" content="Discover curated YouTube playlists, professional certifications, and company-specific interview prep. AI-powered career recommendations.">
+ <!-- Chart.js for Advanced Analytics -->
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+ <link rel="stylesheet" href="/static/css/style.css">
+ <!-- Route Guard: Fast check for active Supabase Auth session token -->
+ <script>
+ (function() {
+ // If we are currently handling an OAuth/Supabase redirection callback,
+ // bypass the route guard to let the Supabase SDK parse the tokens.
+ if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
+ return;
+ }
+ // Find the Supabase auth token key and validate it contains a real access_token
+ const sessionKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+ let isValid = false;
+ if (sessionKey) {
+ try {
+ const raw = localStorage.getItem(sessionKey);
+ const parsed = raw ? JSON.parse(raw) : null;
+ if (parsed && parsed.access_token) {
+ isValid = true;
+ }
+ } catch (e) { /* malformed session — treat as logged out */ }
+ }
+ if (!isValid) {
+ console.log("No active Supabase session found. Proceeding in guest mode.");
+ }
+ })();
+ </script>
 </head>
 
 <body>
 
-    <div class="app-layout">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="brand">
-                <span class="brand-icon">&lt;/&gt;</span>
-                <span class="brand-name">HireMate</span>
-            </div>
-            
-            <nav class="nav-menu">
-                <button class="nav-item active" id="btn-sidebar-dashboard" data-view="view-dashboard">
-                    <span class="nav-icon">📊</span>
-                    <span class="nav-label">Dashboard</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-jobs" data-view="view-jobs">
-                    <span class="nav-icon">💼</span>
-                    <span class="nav-label">Jobs</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-learning" data-view="view-learning">
-                    <span class="nav-icon">📖</span>
-                    <span class="nav-label">Learning</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-practice" data-view="view-practice">
-                    <span class="nav-icon">🎯</span>
-                    <span class="nav-label">Practice</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-resume" data-view="view-resume">
-                    <span class="nav-icon">📄</span>
-                    <span class="nav-label">Resume Review</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-interviews" data-view="view-interviews">
-                    <span class="nav-icon">🤝</span>
-                    <span class="nav-label">Mock Interviews</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-mentor" data-view="view-mentor">
-                    <span class="nav-icon">🔥</span>
-                    <span class="nav-label">AI Mentor</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-projects" data-view="view-projects">
-                    <span class="nav-icon">📁</span>
-                    <span class="nav-label">Projects</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-analytics" data-view="view-analytics">
-                    <span class="nav-icon">📈</span>
-                    <span class="nav-label">Analytics</span>
-                </button>
-                <button class="nav-item" id="btn-sidebar-settings" data-view="view-settings">
-                    <span class="nav-icon">⚙️</span>
-                    <span class="nav-label">Settings</span>
-                </button>
-            </nav>
-
-            <div class="streak-widget">
-                <div class="streak-header">🔥 Current Streak</div>
-                <div class="streak-body">
-                    <span class="streak-days" id="sidebar-streak-days">0 Days</span>
-                    <div class="streak-sparkline" id="sidebar-streak-chart">
-                        <canvas id="sidebarSparklineCanvas" style="height:30px; width:100%;"></canvas>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- Top Bar -->
-            <header class="top-bar">
-                <div class="search-box" id="global-search-trigger">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" placeholder="Search anything..." readonly>
-                    <span class="search-shortcut">⌘K</span>
-                </div>
-                <div class="top-actions">
-                    <button class="btn-icon-only" aria-label="Notifications" id="notifications-btn">
-                        <span class="action-icon">🔔</span>
-                    </button>
-                    <div class="user-avatar" id="user-avatar-initials">SP</div>
-                </div>
-            </header>
-
-            <!-- VIEW: Dashboard -->
-            <section id="view-dashboard" class="content-view active">
-                <div class="welcome-banner">
-                    <div>
-                        <h1 class="welcome-title" id="welcome-title-banner">Welcome back! 👋</h1>
-                        <p class="welcome-subtitle">Track your progress and get personalized recommendations.</p>
-                    </div>
-                    <div class="welcome-filter">
-                        <select class="select-clean">
-                            <option>This Week</option>
-                            <option>This Month</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="dashboard-grid">
-                    <!-- Learning Progress Card -->
-                    <div class="card card-progress">
-                        <h3 class="card-heading">Learning Progress</h3>
-                        <div class="progress-container-row">
-                            <div class="circular-progress-wrap">
-                                <svg class="progress-ring" width="120" height="120">
-                                    <circle class="progress-ring-bg" stroke="#f1f5f9" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
-                                    <circle class="progress-ring-bar" id="dashboard-progress-ring-bar" stroke="#2563eb" stroke-dasharray="314.16" stroke-dashoffset="314.16" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
-                                </svg>
-                                <div class="progress-text-overlay">
-                                    <span class="progress-pct" id="dashboard-progress-pct">0%</span>
-                                    <span class="progress-sub" id="dashboard-progress-count">0 / 500</span>
-                                </div>
-                            </div>
-                            <div class="progress-bars-list">
-                                <div class="p-bar-item">
-                                    <div class="p-bar-labels">
-                                        <span id="dsa-progress-label-text">DSA</span>
-                                        <span id="dsa-progress-label-pct">0%</span>
-                                    </div>
-                                    <div class="p-bar-track">
-                                        <div class="p-bar-fill" id="dsa-progress-bar-fill" style="width: 0%;"></div>
-                                    </div>
-                                </div>
-                                <div class="p-bar-item">
-                                    <div class="p-bar-labels">
-                                        <span>System Design</span>
-                                        <span id="sd-progress-label-pct">0%</span>
-                                    </div>
-                                    <div class="p-bar-track">
-                                        <div class="p-bar-fill" id="sd-progress-bar-fill" style="width: 0%;"></div>
-                                    </div>
-                                </div>
-                                <div class="p-bar-item">
-                                    <div class="p-bar-labels">
-                                        <span>AI/ML</span>
-                                        <span id="aiml-progress-label-pct">0%</span>
-                                    </div>
-                                    <div class="p-bar-track">
-                                        <div class="p-bar-fill" id="aiml-progress-bar-fill" style="width: 0%;"></div>
-                                    </div>
-                                </div>
-                                <div class="p-bar-item">
-                                    <div class="p-bar-labels">
-                                        <span>Development</span>
-                                        <span id="dev-progress-label-pct">0%</span>
-                                    </div>
-                                    <div class="p-bar-track">
-                                        <div class="p-bar-fill" id="dev-progress-bar-fill" style="width: 0%;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Resume Score Card -->
-                    <div class="card card-resume-score">
-                        <h3 class="card-heading">Resume Score</h3>
-                        <div class="resume-score-body">
-                            <div class="score-row">
-                                <div class="doc-icon">📄</div>
-                                <div class="score-col">
-                                    <span class="score-big" id="dashboard-resume-score">N/A</span>
-                                    <span class="score-verdict" id="dashboard-resume-verdict" style="color:var(--text-muted);">No Upload</span>
-                                </div>
-                            </div>
-                            <ul class="score-checks">
-                                <li><span class="check-icon">✓</span> Impact: <strong id="dashboard-resume-impact">N/A</strong></li>
-                                <li><span class="check-icon">✓</span> Skills Match: <strong id="dashboard-resume-skills">N/A</strong></li>
-                                <li><span class="check-icon">✓</span> ATS Score: <strong id="dashboard-resume-ats">N/A</strong></li>
-                            </ul>
-                            <button class="btn-outline-primary" id="dashboard-improve-resume-btn">Improve Resume</button>
-                        </div>
-                    </div>
-
-                    <!-- Upcoming Card -->
-                    <div class="card card-upcoming">
-                        <h3 class="card-heading">Upcoming</h3>
-                        <div class="upcoming-list">
-                            <div class="upcoming-item">
-                                <div class="item-icon-box bg-blue-light">📅</div>
-                                <div class="item-details">
-                                    <span class="item-title">Mock Interview</span>
-                                    <span class="item-sub">Behavioral Round</span>
-                                    <span class="item-time">May 24, 5:00 PM</span>
-                                </div>
-                            </div>
-                            <div class="upcoming-item">
-                                <div class="item-icon-box bg-indigo-light">💻</div>
-                                <div class="item-details">
-                                    <span class="item-title">System Design</span>
-                                    <span class="item-sub">Rate Limiter Design</span>
-                                    <span class="item-time">May 26, 7:00 PM</span>
-                                </div>
-                            </div>
-                            <div class="upcoming-item">
-                                <div class="item-icon-box bg-green-light">🔒</div>
-                                <div class="item-details">
-                                    <span class="item-title">DSA Practice</span>
-                                    <span class="item-sub">Arrays & Hashing</span>
-                                    <span class="item-time">May 26, 6:00 PM</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn-link-action" id="dashboard-view-calendar-btn">View Calendar</button>
-                    </div>
-
-                    <!-- Practice Overview Card -->
-                    <div class="card card-practice-overview">
-                        <h3 class="card-heading">Practice Overview</h3>
-                        <div class="practice-kpi-row">
-                            <div class="kpi-item">
-                                <span class="kpi-num" id="overview-solved-count">0</span>
-                                <span class="kpi-label">Problems Solved</span>
-                            </div>
-                            <div class="kpi-item">
-                                <span class="kpi-num" id="overview-success-rate">0%</span>
-                                <span class="kpi-label">Success Rate</span>
-                            </div>
-                            <div class="kpi-item">
-                                <span class="kpi-num" id="overview-streak">0</span>
-                                <span class="kpi-label">Contests</span>
-                            </div>
-                        </div>
-                        <div class="practice-chart-wrap">
-                            <canvas id="dashboardConsistencyChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- AI Recommendations Card -->
-                    <div class="card card-recommendations">
-                        <h3 class="card-heading">AI Recommendations</h3>
-                        <span class="recommendations-sub">✨ Personalized for your goals</span>
-                        <div class="recommendations-list">
-                            <div class="rec-item" id="rec-item-graphs">
-                                <div class="rec-icon">⚡</div>
-                                <div class="rec-text">
-                                    <span class="rec-title">Focus on Graph Algorithms</span>
-                                    <span class="rec-desc">High impact for coding interviews</span>
-                                </div>
-                                <span class="rec-arrow">→</span>
-                            </div>
-                            <div class="rec-item" id="rec-item-sysdesign">
-                                <div class="rec-icon">🧭</div>
-                                <div class="rec-text">
-                                    <span class="rec-title">Improve System Design</span>
-                                    <span class="rec-desc">Practice scalability concepts</span>
-                                </div>
-                                <span class="rec-arrow">→</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Active Learning Roadmap Card -->
-                    <div class="card card-active-roadmap" id="dashboard-active-roadmap-card" style="grid-column: span 2;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                            <h3 class="card-heading" style="margin-bottom:0;">🗺️ Active Learning Roadmap</h3>
-                            <div id="dashboard-active-roadmap-header-meta" style="display:none; align-items:center; gap:8px;">
-                                <span class="pill-badge" id="dashboard-active-roadmap-skill" style="background:var(--primary-light); color:var(--primary); font-weight:600; font-size:0.85rem; padding:6px 12px; border-radius:100px;"></span>
-                                <button id="btn-dashboard-untrack" title="Stop tracking this roadmap" style="background:transparent; border:none; cursor:pointer; font-size:1.1rem; padding:4px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); transition:color 0.2s; outline:none;">❌</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Empty State -->
-                        <div id="dashboard-active-roadmap-empty" style="text-align:center; padding:30px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
-                            <div style="font-size:3rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));">🗺️</div>
-                            <h4 style="font-family:'Outfit',sans-serif; font-size:1.15rem; color:var(--text-main); margin:0;">No active roadmap tracked yet</h4>
-                            <p style="font-size:0.85rem; color:var(--text-muted); max-width:340px; margin:0; line-height:1.6;">
-                                Accelerate your career by generating a customized AI Roadmap in the <strong>Learning</strong> tab, then click <strong>"Track this Roadmap"</strong> to monitor your progress.
-                            </p>
-                            <button class="btn-primary" id="btn-dashboard-go-learning" style="padding:10px 20px; font-size:0.85rem; border-radius:var(--radius-md); font-weight:600; cursor:pointer; border:none; background:var(--primary); color:white; transition:all 0.2s;">
-                                Go to Learning Tab
-                            </button>
-                        </div>
-
-                        <!-- Active State -->
-                        <div id="dashboard-active-roadmap-content" style="display:none; flex-direction:column; gap:20px;">
-                            <!-- Roadmap Progress Bar and Status -->
-                            <div style="background:var(--bg-main); border:1px solid var(--border); padding:16px 20px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:12px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span id="dashboard-roadmap-progress-text" style="font-size:0.875rem; color:var(--text-sub); font-weight:600;">Progress: 0% (0 / 0 steps completed)</span>
-                                    <span id="dashboard-roadmap-pct-badge" style="font-weight:700; color:var(--primary); font-family:'Outfit',sans-serif; font-size:1.1rem;">0%</span>
-                                </div>
-                                <div style="background:var(--border); height:8px; border-radius:4px; overflow:hidden; width:100%;">
-                                    <div id="dashboard-roadmap-progress-bar" style="background:var(--primary); height:100%; width:0%; transition:width 0.4s ease;"></div>
-                                </div>
-                            </div>
-
-                            <!-- Scrollable Roadmap Checklist -->
-                            <div id="dashboard-roadmap-checklist" style="display:flex; flex-direction:column; gap:12px; max-height:300px; overflow-y:auto; padding-right:8px;">
-                                <!-- Steps will be dynamically rendered here -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Saved Playlists Progress Card -->
-                    <div class="card card-saved-playlists" style="grid-column: span 2;">
-                        <h3 class="card-heading">Saved Playlists & Progress</h3>
-                        <div style="display:flex; gap:24px; margin-bottom:20px; flex-wrap:wrap;">
-                            <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 20px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:4px; min-width:140px;">
-                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Playlists Saved</span>
-                                <strong id="saved-playlists-count" style="font-size:1.5rem; color:var(--text-main); font-family:'Outfit',sans-serif;">0</strong>
-                            </div>
-                            <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 20px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:4px; min-width:140px;">
-                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Completed</span>
-                                <strong id="completed-playlists-count" style="font-size:1.5rem; color:var(--success); font-family:'Outfit',sans-serif;">0</strong>
-                            </div>
-                        </div>
-                        <div id="saved-playlists-list" style="display:flex; flex-direction:column; gap:16px;">
-                            <p class="empty-state" style="padding:10px 0; font-size:0.9rem; margin:0;">No playlists saved yet. Go to the Learning tab to search and save playlists.</p>
-                        </div>
-                    </div>
-
-                    <!-- Skill Distribution Card -->
-                    <div class="card card-distribution">
-                        <h3 class="card-heading">Skill Distribution</h3>
-                        <div class="distribution-body">
-                            <div class="distribution-chart-wrap">
-                                <canvas id="dashboardSkillDistributionChart"></canvas>
-                            </div>
-                            <div class="distribution-legend">
-                                <div class="legend-item"><span class="legend-dot dot-dsa"></span> DSA <span class="legend-pct" id="legend-pct-dsa">0%</span></div>
-                                <div class="legend-item"><span class="legend-dot dot-sd"></span> System Design <span class="legend-pct" id="legend-pct-sd">0%</span></div>
-                                <div class="legend-item"><span class="legend-dot dot-aiml"></span> AI/ML <span class="legend-pct" id="legend-pct-aiml">0%</span></div>
-                                <div class="legend-item"><span class="legend-dot dot-dev"></span> Development <span class="legend-pct" id="legend-pct-dev">0%</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW: Jobs -->
-            <section id="view-jobs" class="content-view">
-                <div class="jobs-header">
-                    <div class="jobs-title-area">
-                        <h2 class="section-title">💼 Job Opportunities</h2>
-                        <p class="section-subtitle">Premium developer positions matched with your career readiness score and dashboard milestones</p>
-                    </div>
-                    <div class="jobs-stats">
-                        <div class="job-stat-card">
-                            <span class="stat-num" id="total-jobs-count">6</span>
-                            <span class="stat-label">Matching Roles</span>
-                        </div>
-                        <div class="job-stat-card">
-                            <span class="stat-num" id="saved-jobs-count">0</span>
-                            <span class="stat-label">Saved Roles</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filters -->
-                <div class="jobs-filter-panel">
-                    <div class="search-box">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="job-search-input" placeholder="Search roles, location, or keywords...">
-                        <button id="btn-job-search" class="btn-job-apply" style="margin-left: 8px; padding: 6px 12px; font-size: 0.8rem; flex-shrink: 0;">Search</button>
-                    </div>
-                    <div class="filter-options">
-                        <select id="job-type-filter">
-                            <option value="all">All Types</option>
-                            <option value="Full-time">Full-time</option>
-                            <option value="Remote">Remote</option>
-                            <option value="Internship">Internship</option>
-                        </select>
-                        <select id="job-sort-filter">
-                            <option value="match">Highest Match</option>
-                            <option value="salary">Highest Salary</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Jobs Grid -->
-                <div class="jobs-grid" id="jobs-list-grid">
-                    <!-- Dynamic Job Cards will be rendered here -->
-                </div>
-            </section>
-
-            <!-- VIEW: Learning -->
-            <section id="view-learning" class="content-view">
-                <!-- Search Panel -->
-                <div class="search-panel">
-                    <div class="search-form">
-                        <div class="input-group">
-                            <input 
-                                type="text" 
-                                id="skill-input" 
-                                class="skill-input" 
-                                placeholder="What do you want to learn?" 
-                                aria-label="Skill to learn"
-                                autocomplete="off"
-                            >
-                        </div>
-                        <select id="level-dropdown" class="level-dropdown" aria-label="Skill level">
-                            <option value="Beginner">🌱 Beginner</option>
-                            <option value="Intermediate">🔥 Intermediate</option>
-                            <option value="Advanced">🚀 Advanced</option>
-                        </select>
-                        <select id="language-dropdown" class="level-dropdown" aria-label="Learning language">
-                            <option value="English">🇺🇸 English</option>
-                            <option value="Hindi">🇮🇳 Hindi</option>
-                            <option value="Telugu">🇮🇳 Telugu</option>
-                        </select>
-                        <button id="cta-button" class="cta-button">
-                            Find Resources
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Loading Indicator -->
-                <div id="loading" class="loading-indicator">
-                    <div class="spinner"></div>
-                    <p>Curating the best resources for you...</p>
-                </div>
-
-                <!-- Tab Switcher -->
-                <div id="results-nav" class="results-tabs" style="display: none;">
-                    <button id="tab-playlists" class="tab-btn active">📺 Resources</button>
-                    <button id="tab-certificates" class="tab-btn">🏆 Certifications</button>
-                    <button id="tab-roadmap" class="tab-btn">🗺️ AI Roadmap</button>
-                    <span id="tier-label-badge" style="margin-left:auto; font-size:0.75rem; opacity:0.7; align-self:center;"></span>
-                </div>
-
-                <!-- View Step 1: YouTube Playlists -->
-                <div id="playlist-step" class="results-step active">
-                    <div class="step-header">
-                        <h2 class="step-title">📺 Core Video Resources</h2>
-                        <p class="step-desc" id="tier-indicator">The best free curated playlists to build your foundation.</p>
-                    </div>
-                    <!-- AI Mentorship Recommendations (Tier 3) -->
-                    <div id="ai-recommendations" style="display: none; margin-bottom: 30px;">
-                        <h3 style="margin-bottom: 15px; font-family:'Outfit', sans-serif;">🌟 AI Mentor Recommendations</h3>
-                        <div id="ai-recommendations-grid" class="results-grid"></div>
-                    </div>
-                    <!-- Standard / Fallback Grid -->
-                    <div id="playlist-grid" class="results-grid"></div>
-                </div>
-
-                <div id="certificate-step" class="results-step">
-                    <div class="step-header">
-                        <h2 class="step-title">🏆 Professional Certifications</h2>
-                        <p class="step-desc">Validated programs from Coursera, Udemy, edX, etc.</p>
-                    </div>
-                    <div id="certificate-grid" class="results-grid"></div>
-                </div>
-
-                <!-- View Step: AI Roadmap -->
-                <div id="roadmap-step" class="results-step">
-                    <div class="step-header">
-                        <h2 class="step-title">🗺️ Your Career Accelerator Roadmap</h2>
-                        <p class="step-desc">A step-by-step path tailored for you by Groq AI.</p>
-                    </div>
-                    <div id="roadmap-content" style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; display:flex; flex-direction:column; gap:20px;"></div>
-                </div>
-
-                <div id="empty-state" class="empty-state">
-                    <p>Enter a skill above to generate your learning path.</p>
-                </div>
-            </section>
-
-            <!-- VIEW: Practice (LeetCode Command Center) -->
-            <section id="view-practice" class="content-view">
-                <!-- DSA Category View (COMMAND CENTER) -->
-                <div id="dsa-prep-content">
-                    <!-- Company-wise lists -->
-                    <div class="dsa-workspace">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
-                            <h2 style="font-family:'Outfit', sans-serif; font-weight:800; font-size:1.5rem;">Problem Database</h2>
-                        </div>
-                        
-                        <!-- Filters -->
-                        <div class="search-panel" style="padding:20px; display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
-                            <input type="text" id="company-search" placeholder="Search Company (e.g. Google)..." class="skill-input" style="flex:1; padding:10px 16px;">
-                            <select id="filter-difficulty" class="level-dropdown" style="padding:10px 16px;">
-                                <option value="All">All Difficulties</option>
-                                <option value="Easy">Easy</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Hard">Hard</option>
-                            </select>
-                            <select id="filter-status" class="level-dropdown" style="padding:10px 16px;">
-                                <option value="All">All Statuses</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Completed">Completed</option>
-                            </select>
-                        </div>
-
-                        <!-- Company Grid (Visible initially) -->
-                        <div id="company-selection" class="company-selection">
-                            <div id="companies-grid" class="companies-grid">
-                                <!-- Loaded dynamically -->
-                            </div>
-                        </div>
-
-                        <!-- Questions List (Visible after company selection) -->
-                        <div id="questions-view" class="questions-view" style="display: none; margin-top: 24px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
-                                <h3 id="selected-company-title" class="company-title" style="margin:0; font-family:'Outfit', sans-serif;">Company Name</h3>
-                                <button id="back-to-companies" class="btn-back">← Change Company</button>
-                            </div>
-                            <div id="questions-grid" class="results-grid">
-                                <!-- Loaded dynamically -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW: Resume Review (Resume Analyzer) -->
-            <section id="view-resume" class="content-view">
-                <div id="resume-analyzer-content">
-                    <div class="resume-analyzer-ui">
-                        <div class="resume-meta-inputs" id="resume-meta-inputs">
-                            <div class="input-group">
-                                <label class="input-label">Target Role</label>
-                                <input type="text" id="target-role" class="skill-input" placeholder="e.g. Software Engineer, Data Scientist" style="padding:12px 16px;">
-                            </div>
-                            <div class="input-group">
-                                <label class="input-label">Benchmark Standard</label>
-                                <select id="target-benchmark" class="level-dropdown" style="padding:12px 16px; width:100%;">
-                                    <option value="FAANG">FAANG / Top Tier</option>
-                                    <option value="Tier-1 Startup">Tier-1 Startup</option>
-                                    <option value="Average Company" selected>Average Company</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="upload-zone" id="upload-zone">
-                            <div class="upload-icon">📤</div>
-                            <h3 style="font-family:'Outfit', sans-serif; font-weight:700;">Upload your Resume</h3>
-                            <p style="color:var(--text-sub); font-size:0.9rem; margin-top:4px;">Drag and drop your PDF or DOCX file here, or click to browse.</p>
-                            <input type="file" id="resume-upload" hidden accept=".pdf,.doc,.docx">
-                            <button class="cta-button" id="btn-trigger-upload" style="margin-top: 20px; padding:12px 24px;">
-                                Analyze Resume
-                            </button>
-                        </div>
-
-                        <div id="analysis-status" class="analysis-status" style="display: none; text-align:center; padding:40px;">
-                            <div class="spinner"></div>
-                            <p id="status-text" style="color:var(--text-sub); font-weight:600;">Scanning for keywords...</p>
-                        </div>
-
-                        <!-- Real Analysis Results -->
-                        <div id="analysis-results" class="analysis-results" style="display: none;">
-                            <div class="results-header">
-                                <div class="decision-wrap">
-                                    <div class="score-meta">
-                                        <h3 id="res-score-value" class="score-value" style="font-family:'Outfit', sans-serif; font-size:2rem; font-weight:800;">0/10</h3>
-                                        <span id="res-market" class="pill-badge" style="background:var(--primary-light); color:var(--primary); font-weight:700;">Market: Top 5%</span>
-                                    </div>
-                                    <div class="verdict-pill-wrap">
-                                        <span id="res-verdict-pill" class="decision-pill select">SHORTLIST</span>
-                                    </div>
-                                </div>
-                                <div class="verdict-box">
-                                    <p id="res-brutal-summary" class="verdict-text"></p>
-                                </div>
-                            </div>
-
-                            <div class="evaluation-grid" style="display:grid; grid-template-columns: 1fr; gap:24px;">
-                                <!-- STAGE 1: ATS -->
-                                <div class="card">
-                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">🤖 STAGE 1: ATS Simulation</h4>
-                                    <div style="display:flex; gap:24px; margin-bottom:16px;">
-                                        <div>
-                                            <span style="font-size:0.8rem; color:var(--text-muted); display:block;">Keyword Match</span>
-                                            <strong id="res-ats-match" style="font-size:1.5rem; color:var(--text-main);">0%</strong>
-                                        </div>
-                                        <div>
-                                            <span style="font-size:0.8rem; color:var(--text-muted); display:block;">Pass Probability</span>
-                                            <strong id="res-ats-prob" style="font-size:1.5rem; color:var(--text-main);">High</strong>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p style="font-size:0.85rem; font-weight:600; color:var(--text-sub); margin-bottom:6px;">Missing Critical Keywords:</p>
-                                        <ul id="res-ats-missing" class="keyword-tags" style="display:flex; flex-wrap:wrap; gap:8px; list-style:none;"></ul>
-                                    </div>
-                                </div>
-
-                                <!-- STAGE 2: RECRUITER -->
-                                <div class="card">
-                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">👀 STAGE 2: Recruiter Scan (10s)</h4>
-                                    <p id="res-recruiter-impression" style="font-style:italic; font-size:0.9rem; color:var(--text-sub); margin-bottom:16px;"></p>
-                                    <div>
-                                        <p style="font-size:0.85rem; font-weight:600; color:var(--text-sub); margin-bottom:6px;">Top Concerns:</p>
-                                        <ul id="res-recruiter-reasons" class="detailed-list"></ul>
-                                    </div>
-                                </div>
-
-                                <!-- STAGE 3: HIRING MANAGER TABLE -->
-                                <div class="card">
-                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">👨‍💼 STAGE 3: Deep Evaluation</h4>
-                                    <div style="overflow-x:auto;">
-                                        <table class="evaluation-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Category</th>
-                                                    <th>Weight</th>
-                                                    <th>Score</th>
-                                                    <th>Reasoning</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="res-hm-table">
-                                                <!-- Rows injected by JS -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <!-- Action Plan & Rewrites -->
-                                <div class="card">
-                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">📋 Strategic Action Plan</h4>
-                                    <div class="action-grid">
-                                        <div class="action-box">
-                                            <h5 style="font-weight:700; margin-bottom:10px;">Proposed Projects</h5>
-                                            <div id="res-action-projects" style="display:flex; flex-direction:column; gap:12px;"></div>
-                                        </div>
-                                        <div class="action-box">
-                                            <h5 style="font-weight:700; margin-bottom:10px;">Tools to Master</h5>
-                                            <ul id="res-action-tools" class="detailed-list"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="card">
-                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">✨ Professional Rewrites</h4>
-                                    <div id="res-action-rewrites" class="rewrites-container"></div>
-                                </div>
-
-                                <div class="card">
-                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">📉 Rejection Risk</h4>
-                                    <p id="res-risk-text" style="color:var(--danger); font-size:0.9rem;"></p>
-                                </div>
-                                
-                                <div class="card">
-                                    <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">🌟 What Works</h4>
-                                    <ul id="res-works-list" class="detailed-list"></ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW: Mock Interviews -->
-            <section id="view-interviews" class="content-view">
-                <div class="welcome-banner">
-                    <div>
-                        <h1 class="welcome-title" id="interviews-title">Mock Interview Simulator</h1>
-                        <p class="welcome-subtitle" id="interviews-subtitle">Conduct real-time, AI-driven mock interviews and get instant SaaS-level readiness evaluations.</p>
-                    </div>
-                </div>
-
-                <!-- STAGE 1: SETUP HUB -->
-                <div id="interview-stage-setup" class="interview-stage active">
-                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                        <!-- Selection panel -->
-                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
-                            <h3 class="card-heading" style="margin-bottom: 4px;">🎯 Launch New Interview</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">Configure your target parameters to initialize the simulator.</p>
-                            
-                            <div class="input-group">
-                                <label class="input-label" style="font-weight: 700;">Target Role</label>
-                                <input type="text" id="interview-role-input" class="skill-input" placeholder="e.g. Backend Engineer, Fullstack Developer" style="width: 100%; box-sizing: border-box; padding: 12px 16px;">
-                            </div>
-
-                            <div class="input-group">
-                                <label class="input-label" style="font-weight: 700;">Round Type</label>
-                                <select id="interview-type-select" class="level-dropdown" style="width: 100%; padding: 12px 16px;">
-                                    <option value="Coding & DSA">💻 Coding & Data Structures (DSA)</option>
-                                    <option value="System Design">🧭 System Design & Scalability</option>
-                                    <option value="Behavioral">💼 Behavioral & STAR Method</option>
-                                </select>
-                            </div>
-
-                            <div class="input-group">
-                                <label class="input-label" style="font-weight: 700;">Company Benchmark</label>
-                                <select id="interview-benchmark-select" class="level-dropdown" style="width: 100%; padding: 12px 16px;">
-                                    <option value="FAANG">FAANG Tier (Google, Meta, Netflix)</option>
-                                    <option value="Tier-1 Startup">Tier-1 Startup (Stripe, Uber, Airbnb)</option>
-                                    <option value="Average Company" selected>Average Tech / Enterprise</option>
-                                </select>
-                            </div>
-
-                            <button id="btn-start-interview" class="cta-button" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), #4f46e5); font-weight: 700; margin-top: 8px;">
-                                Start Simulation ⚡
-                            </button>
-                        </div>
-
-                        <!-- Info/Guide panel -->
-                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div>
-                                <h3 class="card-heading" style="margin-bottom: 12px;">💡 How it works</h3>
-                                <ul class="score-checks" style="display: flex; flex-direction: column; gap: 14px; font-size: 0.9rem; color: var(--text-sub);">
-                                    <li><span class="check-icon" style="color: var(--primary);">✓</span> <strong>3-Turn Conversation:</strong> The AI interviewer will present an initial question and ask 2 follow-ups to probe your depth.</li>
-                                    <li><span class="check-icon" style="color: var(--primary);">✓</span> <strong>STAR/Code templates:</strong> Type your code or detailed answers in the rich editor text area.</li>
-                                    <li><span class="check-icon" style="color: var(--primary);">✓</span> <strong>SaaS grading audit:</strong> Get score break-downs, strengths, key weaknesses, and an expert-written sample answer.</li>
-                                </ul>
-                            </div>
-                            <div style="background: rgba(37,99,235,0.08); border-left: 4px solid var(--primary); padding: 14px 18px; border-radius: 8px; margin-top: 16px;">
-                                <p style="margin: 0; font-size: 0.825rem; color: var(--primary); font-weight: 600; line-height: 1.5;">
-                                    Note: Every simulation performance is stored in your personal prep log and integrated into your overall readiness profile.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Interview History Section -->
-                    <div class="card" style="padding: 24px;">
-                        <h3 class="card-heading" style="margin-bottom: 16px;">📜 Prep History & Audit Logs</h3>
-                        <div id="interview-history-list" style="display: flex; flex-direction: column; gap: 14px;">
-                            <p class="empty-state" style="margin:0; padding: 20px 0;">No interviews simulated yet. Launch your first round above!</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- STAGE 2: ACTIVE VOICE INTERVIEW CONVERSATION -->
-                <div id="interview-stage-chat" class="interview-stage" style="display: none;">
-                    <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; margin-bottom: 24px;">
-                        
-                        <!-- Main Recruiter Alex Call Dashboard -->
-                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; height: 600px; justify-content: space-between; position: relative;">
-                            
-                            <!-- Call Header -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; animation: pulse 1.5s infinite;"></div>
-                                    <strong style="color: var(--text-main); font-size: 1rem; font-family: 'Outfit', sans-serif;">Live Mock Interview Session</strong>
-                                </div>
-                                <span id="voice-interview-round-label" style="font-size: 0.8rem; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 4px 10px; border-radius: 6px;">Welcome Round</span>
-                            </div>
-
-                            <!-- Visual Recruiter Call Hub -->
-                            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 20px 0;">
-                                
-                                <!-- Interviewer Circle Avatar & Speak Indicators -->
-                                <div id="interviewer-avatar-container" style="width: 130px; height: 130px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; font-size: 3.5rem; position: relative; box-shadow: 0 8px 30px rgba(79, 70, 229, 0.3); transition: all 0.3s;">
-                                    👨‍💼
-                                    <!-- Animated Wave Rings -->
-                                    <div class="pulse-ring" style="position: absolute; width: 100%; height: 100%; border: 3px solid var(--primary); border-radius: 50%; opacity: 0.4; animation: ripple 2s infinite;"></div>
-                                </div>
-
-                                <!-- AI Speech / Voice Transcription Visualizer Wave -->
-                                <div style="display: flex; align-items: center; gap: 4px; height: 40px;">
-                                    <div class="wave-bar" style="width: 4px; height: 8px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.1s;"></div>
-                                    <div class="wave-bar" style="width: 4px; height: 24px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.3s;"></div>
-                                    <div class="wave-bar" style="width: 4px; height: 35px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.5s;"></div>
-                                    <div class="wave-bar" style="width: 4px; height: 18px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.2s;"></div>
-                                    <div class="wave-bar" style="width: 4px; height: 8px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.4s;"></div>
-                                </div>
-
-                                <!-- Dynamic Text Subtitles Overlay -->
-                                <div style="max-width: 480px; text-align: center; margin-top: 10px;">
-                                    <p id="voice-subtitles-box" style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 500; color: var(--text-main); line-height: 1.6; margin: 0; min-height: 50px;">
-                                        Initializing call setup... Alex will speak shortly.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Audio Player for synthesizing gTTS MP3 streams -->
-                            <audio id="voice-audio-element" style="display: none;" autoplay></audio>
-
-                            <!-- Microphone Controllers & Control Bar -->
-                            <div style="border-top: 1px solid var(--border); padding-top: 20px; display: flex; flex-direction: column; gap: 14px; align-items: center;">
-                                
-                                <div style="display: flex; align-items: center; gap: 16px;">
-                                    <!-- End call -->
-                                    <button id="btn-end-interview-call" class="btn-outline-primary" style="border-color: #ef4444; color: #ef4444; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="window.finishInterviewSession()">
-                                        🛑
-                                    </button>
-                                    
-                                    <!-- Speak Microphone / Push To Talk -->
-                                    <button id="btn-voice-mic-toggle" style="background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%); color: white; border: none; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; cursor: pointer; box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3); transition: all 0.2s;" onclick="window.toggleSpeechListen()">
-                                        🎤
-                                    </button>
-
-                                    <!-- Toggle Text Input override fallback -->
-                                    <button id="btn-toggle-manual-text" class="btn-outline-primary" style="width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;" onclick="window.toggleTextInputOverride()">
-                                        ⌨️
-                                    </button>
-                                </div>
-                                
-                                <div id="voice-state-desc-label" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-                                    Recruiter Speaking...
-                                </div>
-                            </div>
-
-                            <!-- Manual Text Override Box container (collapsible) -->
-                            <div id="manual-text-override-container" style="display: none; position: absolute; bottom: 100px; left: 24px; right: 24px; background: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-sub);">Text Input Override</span>
-                                    <button style="background: transparent; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-muted);" onclick="window.toggleTextInputOverride()">×</button>
-                                </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <input type="text" id="manual-text-chat-input" placeholder="Type your response instead..." class="skill-input" style="flex: 1; padding: 10px;" />
-                                    <button class="cta-button" style="padding: 10px 16px;" onclick="window.submitManualTextResponse()">Send</button>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- Right Panel: Camera Preview for posture/eye-contact tracking -->
-                        <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; height: 600px; box-sizing: border-box;">
-                            <h4 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Camera & Pose Audit</h4>
-                            
-                            <!-- Video WebRTC Viewport -->
-                            <div id="pose-video-container" style="flex: 1; background: #000; border-radius: 8px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-                                <video id="pose-local-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
-                                
-                                <div id="pose-camera-fallback" style="text-align: center; color: #64748b; padding: 20px;">
-                                    <span style="font-size: 2rem;">📷</span>
-                                    <p style="margin: 8px 0 0; font-size: 0.8rem; font-weight: 600;">Camera feeds disabled</p>
-                                    <button class="btn-outline-primary" style="padding: 6px 12px; font-size: 0.75rem; margin-top: 8px;" onclick="window.enableCameraPoseTracking()">Enable Webcam</button>
-                                </div>
-                                
-                                <!-- Floating metrics -->
-                                <div id="camera-active-tag" style="display: none; position: absolute; top: 12px; left: 12px; background: rgba(16,185,129,0.85); color: white; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">
-                                    REC ACTIVE
-                                </div>
-                            </div>
-                            
-                            <!-- Body Language Live Feedback Box -->
-                            <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.8rem; color: var(--text-sub);">
-                                <strong style="color: var(--text-main); display: block; margin-bottom: 4px;">Posture Evaluation</strong>
-                                <span id="live-pose-assessment">Camera unavailable. Eye contact and smiles metrics are currently muted.</span>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- STAGE 3: LOADING AUDIT -->
-                <div id="interview-stage-loading" class="interview-stage" style="display: none; padding: 60px 20px; text-align: center;">
-                    <div class="card" style="max-width: 500px; margin: 0 auto; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
-                        <div class="spinner" style="width: 50px; height: 50px; border-width: 5px;"></div>
-                        <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.4rem; color: var(--text-main); margin: 0;">Compiling Interview Report</h3>
-                        <p id="interview-loading-step" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; font-weight: 500; margin: 0;">Analyzing solution accuracy...</p>
-                        <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 10px;">
-                            <div id="interview-loading-bar" style="background: var(--primary); height: 100%; width: 10%; transition: width 0.4s ease;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- STAGE 4: EVALUATION SCORECARD -->
-                <div id="interview-stage-result" class="interview-stage" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.4rem; margin: 0;">SaaS Evaluation Report</h2>
-                        <button id="btn-back-to-hub" class="btn-outline-primary" style="padding: 8px 16px; font-weight: 600; font-size: 0.85rem;">← Back to Prep Hub</button>
-                    </div>
-
-                    <div class="dashboard-grid" style="grid-template-columns: 340px 1fr; gap: 24px; align-items: start;">
-                        <!-- Left Panel: Score and Verdict -->
-                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
-                            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Interview Performance</span>
-                            
-                            <!-- Circular Score Ring -->
-                            <div class="circular-progress-wrap" style="width: 150px; height: 150px; position: relative; display: flex; align-items: center; justify-content: center;">
-                                <svg class="progress-ring" width="150" height="150">
-                                    <circle class="progress-ring-bg" stroke="var(--border)" stroke-width="10" fill="transparent" r="62" cx="75" cy="75"/>
-                                    <circle class="progress-ring-bar" id="interview-result-ring" stroke="var(--primary)" stroke-dasharray="389.56" stroke-dashoffset="389.56" stroke-width="10" fill="transparent" r="62" cx="75" cy="75"/>
-                                </svg>
-                                <div style="position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                    <strong id="interview-result-score-label" style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0%</strong>
-                                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Overall Score</span>
-                                </div>
-                            </div>
-
-                            <!-- Verdict Badge -->
-                            <div style="width: 100%;">
-                                <span id="interview-result-verdict" class="decision-pill" style="font-size: 1.1rem; font-weight: 800; padding: 10px 24px; border-radius: 12px; display: inline-block; width: 80%; text-align: center; text-transform: uppercase;">Hire</span>
-                            </div>
-
-                            <!-- Categories list -->
-                            <div style="width: 100%; border-top: 1px solid var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 14px; text-align: left;">
-                                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; margin: 0 0 4px 0;">Category Grades</h4>
-                                
-                                <div id="interview-result-categories-list" style="display: flex; flex-direction: column; gap: 12px;">
-                                    <!-- Injected dynamically -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right Panel: Detailed Audit -->
-                        <div style="display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0;">
-                            <!-- Recruiter summary -->
-                            <div class="card" style="padding: 24px;">
-                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 10px;">👨‍💼 Recruiter Snap Judgment</h4>
-                                <p id="interview-result-judgment" style="font-style: italic; font-size: 0.925rem; color: var(--text-sub); line-height: 1.6; margin: 0;"></p>
-                            </div>
-
-                            <!-- Strengths and Weaknesses -->
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                <div class="card" style="padding: 20px;">
-                                    <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--success); margin-bottom: 12px;">🌟 Key Strengths</h4>
-                                    <ul id="interview-result-strengths" class="detailed-list" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; padding-left: 16px; margin: 0;"></ul>
-                                </div>
-                                <div class="card" style="padding: 20px;">
-                                    <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--danger); margin-bottom: 12px;">⚠️ Critical Weaknesses</h4>
-                                    <ul id="interview-result-weaknesses" class="detailed-list" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; padding-left: 16px; margin: 0;"></ul>
-                                </div>
-                            </div>
-
-                            <!-- Action Plan -->
-                            <div class="card" style="padding: 24px;">
-                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 12px;">📋 Targeted Action Plan</h4>
-                                <ul id="interview-result-action-plan" class="detailed-list" style="display: flex; flex-direction: column; gap: 10px; font-size: 0.875rem; padding-left: 16px; margin: 0; line-height: 1.5;"></ul>
-                            </div>
-
-                            <!-- Ideal Sample Response -->
-                            <div class="card" style="padding: 24px;">
-                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 12px;">💡 Ideal Expert Response</h4>
-                                <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto;">
-                                    <pre id="interview-result-ideal" style="font-family: 'Courier New', Courier, monospace; font-size: 0.875rem; line-height: 1.6; color: var(--text-main); margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW: AI Mentor (dedicated consultation space) -->
-            <section id="view-mentor" class="content-view">
-                <div class="welcome-banner">
-                    <div>
-                        <h1 class="welcome-title">AI Mentor Consultation</h1>
-                        <p class="welcome-subtitle">Get unfiltered, harsh, career-changing advice from your AI mentor.</p>
-                    </div>
-                </div>
-
-                <!-- Tab selection -->
-                <div class="results-tabs" style="margin:0 auto 24px auto; display:flex; width:100%; max-width:680px; box-sizing:border-box;">
-                    <button class="tab-btn active" id="tab-mentor-career" style="flex:1; padding:12px; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:8px;">
-                        <span>💼</span> Career Mentor
-                    </button>
-                    <button class="tab-btn" id="tab-mentor-coding" style="flex:1; padding:12px; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:8px;">
-                        <span>💻</span> Coding Mentor
-                    </button>
-                </div>
-
-                <!-- Career Mentor Panel -->
-                <div id="panel-mentor-career" class="card" style="max-width:680px; margin:0 auto; display:block;">
-                    <h2 style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--text-main); margin-bottom:6px;">💼 Career Guidance Mentor</h2>
-                    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Receive a strategic assessment of your career roadmap and skills suitability.</p>
-                    
-                    <label class="input-label">Your Career Goal</label>
-                    <input id="mentor-goal-page" type="text" placeholder="e.g. Backend Engineer at Google" class="skill-input" style="padding:12px; margin-bottom:16px; width:100%; box-sizing:border-box;" />
-                    
-                    <label class="input-label">Your Current Skills (comma-separated)</label>
-                    <input id="mentor-skills-page" type="text" placeholder="e.g. React, HTML, CSS, JavaScript" class="skill-input" style="padding:12px; margin-bottom:20px; width:100%; box-sizing:border-box;" />
-                    
-                    <button id="mentor-submit-btn-page" class="cta-button" style="width:100%; padding:14px; background:linear-gradient(135deg,#f97316,#dc2626); border:none; border-radius:12px; color:white; font-size:1rem; font-weight:700; cursor:pointer;">
-                        Get Brutal Career Advice ⚡
-                    </button>
-                    <div id="mentor-result-page" style="margin-top:20px;"></div>
-                </div>
-
-                <!-- Coding Mentor Panel -->
-                <div id="panel-mentor-coding" class="card" style="max-width:680px; margin:0 auto; display:none;">
-                    <h2 style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--text-main); margin-bottom:6px;">💻 Coding Standings Mentor</h2>
-                    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Your coding profile handles and database metrics will be analyzed to pinpoint where you are lagging.</p>
-                    
-                    <!-- Stats / Profiles Summary Grid -->
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
-                        <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 16px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">
-                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">LeetCode Profile</span>
-                            <span id="summary-leetcode" style="font-size:0.9rem; font-weight:600; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
-                        </div>
-                        <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 16px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">
-                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">GitHub Profile</span>
-                            <span id="summary-github" style="font-size:0.9rem; font-weight:600; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
-                        </div>
-                        <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 16px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">
-                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Codeforces Profile</span>
-                            <span id="summary-codeforces" style="font-size:0.9rem; font-weight:600; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
-                        </div>
-                        <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 16px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">
-                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Codementor Profile</span>
-                            <span id="summary-codementor" style="font-size:0.9rem; font-weight:600; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
-                        </div>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:rgba(37,99,235,0.05); border:1px solid rgba(37,99,235,0.15); padding:12px 16px; border-radius:8px;">
-                        <span style="font-size:0.8rem; color:var(--text-sub); font-weight:500;">Need to update your coding profiles?</span>
-                        <button id="btn-mentor-go-settings" class="btn-outline-primary" style="padding:6px 12px; font-size:0.75rem; border-radius:6px; cursor:pointer;">Go to Settings</button>
-                    </div>
-
-                    <button id="coding-submit-btn-page" class="cta-button" style="width:100%; padding:14px; background:linear-gradient(135deg,#6366f1,#4f46e5); border:none; border-radius:12px; color:white; font-size:1rem; font-weight:700; cursor:pointer;">
-                        Analyze Coding Profiles & DSA ⚡
-                    </button>
-                    <div id="coding-result-page" style="margin-top:20px;"></div>
-                </div>
-            </section>
-
-            <!-- VIEW: Projects -->
-            <section id="view-projects" class="content-view">
-                <div class="welcome-banner">
-                    <div>
-                        <h1 class="welcome-title">Projects Workspace</h1>
-                        <p class="welcome-subtitle">Manage your project portfolio and view recommended blueprints.</p>
-                    </div>
-                </div>
-                
-                <div class="projects-layout" style="display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start;">
-                    <!-- Left: Form Card -->
-                    <div class="card">
-                        <h3 class="card-heading" style="margin-bottom: 16px;">Add Custom Project</h3>
-                        <form id="add-project-form" style="display:flex; flex-direction:column; gap:16px;">
-                            <div>
-                                <label class="input-label">Project Title</label>
-                                <input type="text" id="project-title" class="skill-input" placeholder="e.g. Portfolio Website" required style="padding:10px 14px; font-size: 0.9rem;">
-                            </div>
-                            <div>
-                                <label class="input-label">Category / Tech Stack</label>
-                                <input type="text" id="project-category" class="skill-input" placeholder="e.g. Frontend, React" required style="padding:10px 14px; font-size: 0.9rem;">
-                            </div>
-                            <div>
-                                <label class="input-label">Description</label>
-                                <textarea id="project-desc" class="skill-input" placeholder="What does the project do?" required style="padding:10px 14px; min-height:80px; font-family:inherit; resize:vertical; font-size: 0.9rem;"></textarea>
-                            </div>
-                            <button type="submit" class="cta-button" style="padding:12px; font-size:0.9rem;">Add Project</button>
-                        </form>
-                    </div>
-
-                    <!-- Right: Projects Grid -->
-                    <div style="display:flex; flex-direction:column; gap:20px;">
-                        <h3 class="card-heading" style="margin:0;">Project Portfolio</h3>
-                        <div id="projects-list-container" class="results-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-                            <!-- Injected dynamically -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW: Analytics -->
-            <section id="view-analytics" class="content-view">
-                <div class="welcome-banner" style="margin-bottom: 24px;">
-                    <div>
-                        <h1 class="welcome-title" style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.8rem;">Performance & Competency Analytics</h1>
-                        <p class="welcome-subtitle">SaaS-level deep assessment of your engineering interview readiness.</p>
-                    </div>
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <select id="analytics-timeframe" class="select-clean" style="padding: 10px 16px;">
-                            <option value="7">Last 7 Days</option>
-                            <option value="30" selected>Last 30 Days</option>
-                            <option value="all">All Time</option>
-                        </select>
-                        <button id="btn-trigger-audit" class="cta-button" style="padding: 10px 20px; font-weight: 700; background: linear-gradient(135deg, var(--primary), #4f46e5); border: none; border-radius: var(--radius-md); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s var(--smooth); box-shadow: var(--shadow-sm);">
-                            <span>Generate AI Audit ⚡</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- KPI METRICS ROW -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px;">
-                    <!-- PRI CARD -->
-                    <div class="card" style="padding: 20px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 16px;">
-                        <div>
-                            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Readiness Score (PRI)</span>
-                            <strong id="analytics-pri-score" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0%</strong>
-                            <span id="analytics-pri-badge" class="pill-badge" style="font-size: 0.7rem; font-weight: 700; background: var(--primary-light); color: var(--primary); display: inline-block; margin-top: 8px; border-radius: 6px;">Novice</span>
-                        </div>
-                        <div class="circular-progress-wrap" style="width: 70px; height: 70px; flex-shrink: 0;">
-                            <svg class="progress-ring" width="70" height="70">
-                                <circle class="progress-ring-bg" stroke="#f1f5f9" stroke-width="6" fill="transparent" r="28" cx="35" cy="35"/>
-                                <circle class="progress-ring-bar" id="analytics-pri-ring" stroke="var(--primary)" stroke-dasharray="175.93" stroke-dashoffset="175.93" stroke-width="6" fill="transparent" r="28" cx="35" cy="35"/>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <!-- SOLVED COUNTS -->
-                    <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Practice Problems</span>
-                        <strong id="analytics-dsa-count" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0</strong>
-                        <div style="display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; font-weight: 600;">
-                            <span style="color: var(--success);">Easy: <span id="analytics-dsa-easy">0</span></span>
-                            <span style="color: var(--warning);">Med: <span id="analytics-dsa-med">0</span></span>
-                            <span style="color: var(--danger);">Hard: <span id="analytics-dsa-hard">0</span></span>
-                        </div>
-                    </div>
-
-                    <!-- STUDY VELOCITY -->
-                    <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Weekly Study Velocity</span>
-                        <strong id="analytics-weekly-velocity" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0.0</strong>
-                        <span style="font-size: 0.75rem; color: var(--text-sub); margin-top: 8px; font-weight: 500;">tasks/week (active learning pace)</span>
-                    </div>
-
-                    <!-- ATS RESUME SCORE -->
-                    <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
-                        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">ATS Resume Standing</span>
-                        <strong id="analytics-ats-score" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">—</strong>
-                        <span id="analytics-ats-verdict" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">No Resume Uploaded</span>
-                    </div>
-                </div>
-
-                <!-- AI COMPETENCY AUDIT PANEL -->
-                <div id="analytics-audit-panel" class="card" style="margin-bottom: 24px; padding: 24px; background: linear-gradient(to bottom right, #ffffff, #fafafa); display: block; border: 1px solid var(--border); transition: all 0.3s ease;">
-                    <!-- Empty/Initial State -->
-                    <div id="audit-state-initial" style="text-align: center; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 12px;">
-                        <div style="font-size: 2.5rem;">🕵️‍♂️</div>
-                        <h3 style="font-family:'Outfit',sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--text-main);">AI Competency & Benchmark Audit</h3>
-                        <p style="color: var(--text-sub); font-size: 0.85rem; max-width: 460px; line-height: 1.6; margin: 0 0 8px 0;">
-                            Get a professional-grade technical assessment of your interview fitness. We compare your current DSA solving stats, roadmap coverage, and resume performance against FAANG & high-growth startup benchmarks.
-                        </p>
-                        <button id="btn-generate-audit-inner" class="cta-button" style="padding: 10px 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary), #4f46e5); border: none; border-radius: var(--radius-md); color: white; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.875rem;">
-                            <span>Generate Audit Report ⚡</span>
-                        </button>
-                    </div>
-
-                    <!-- Loading State -->
-                    <div id="audit-state-loading" style="display: none; text-align: center; padding: 30px 0;">
-                        <div class="spinner" style="margin: 0 auto 16px auto;"></div>
-                        <h4 style="font-family:'Outfit',sans-serif; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Running System Audit</h4>
-                        <p id="audit-loading-text" style="color: var(--text-muted); font-size: 0.825rem; font-weight: 500; font-style: italic;">Parsing practice patterns...</p>
-                    </div>
-
-                    <!-- Result State -->
-                    <div id="audit-state-result" style="display: none; flex-direction: column; gap: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
-                            <div>
-                                <h3 style="font-family:'Outfit',sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--text-main); margin-bottom: 4px;">Competency Audit Report</h3>
-                                <p style="color: var(--text-muted); font-size: 0.8rem; font-weight: 500;">Calculated by Groq Career Intelligence Engine • Realtime</p>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-sub);">Market Ready Level:</span>
-                                <span id="audit-market-level" class="pill-badge" style="background: var(--primary-light); color: var(--primary); font-weight: 800; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px;">Junior (L3)</span>
-                            </div>
-                        </div>
-
-                        <div style="background: #f8fafc; border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 0;">
-                            <strong style="font-size: 0.85rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Auditor Verdict</strong>
-                            <p id="audit-verdict-text" style="color: var(--text-main); font-size: 0.9rem; line-height: 1.5; font-style: italic; margin: 0; font-weight: 500;">"Verdict..."</p>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex-wrap: wrap;">
-                            <!-- Gaps & Focus Areas -->
-                            <div>
-                                <h4 style="font-family:'Outfit',sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                    <span style="color: var(--danger);">🛑</span> Technical Skill Gaps
-                                </h4>
-                                <ul id="audit-gaps-list" style="padding-left: 20px; font-size: 0.85rem; color: var(--text-sub); display: flex; flex-direction: column; gap: 8px;">
-                                    <!-- Dynamic list items -->
-                                </ul>
-                            </div>
-
-                            <!-- High-Impact Next Steps -->
-                            <div>
-                                <h4 style="font-family:'Outfit',sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                    <span style="color: var(--success);">⚡</span> Action Plan Items
-                                </h4>
-                                <ul id="audit-actions-list" style="padding-left: 20px; font-size: 0.85rem; color: var(--text-sub); display: flex; flex-direction: column; gap: 8px;">
-                                    <!-- Dynamic list items -->
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div style="border-top: 1px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
-                                Estimated Prep Timeline: <strong id="audit-weeks" style="color: var(--text-main); font-weight: 700;">—</strong> weeks to interview ready
-                            </span>
-                            <button id="btn-re-audit" style="background: transparent; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--primary); outline: none; transition: color 0.2s;">
-                                Run New Audit
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VISUALIZATION DASHBOARD GRID -->
-                <div class="dashboard-grid">
-                    <!-- Cumulative Growth Chart -->
-                    <div class="card" style="grid-column: span 2;">
-                        <h3 class="card-heading" style="margin-bottom: 16px;">Practice & Learning Velocity</h3>
-                        <div style="height:250px;">
-                            <canvas id="analyticsGrowthChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Competency Radar Chart -->
-                    <div class="card">
-                        <h3 class="card-heading" style="margin-bottom: 16px;">Skills Alignment Radar</h3>
-                        <div style="height:250px; position: relative;">
-                            <canvas id="analyticsRadarChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Consistency Heatmap Grid -->
-                    <div class="card" style="grid-column: span 2;">
-                        <h3 class="card-heading" style="margin-bottom: 12px;">30-Day Practice Heatmap</h3>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <div id="analytics-heatmap-container" style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; padding: 10px 0;">
-                                <!-- Blocks generated by JS -->
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border);">
-                                <span>30 days ago</span>
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span>Less</span>
-                                    <span style="width: 12px; height: 12px; border-radius: 3px; background: #e2e8f0; display: inline-block;"></span>
-                                    <span style="width: 12px; height: 12px; border-radius: 3px; background: #dbeafe; display: inline-block;"></span>
-                                    <span style="width: 12px; height: 12px; border-radius: 3px; background: #93c5fd; display: inline-block;"></span>
-                                    <span style="width: 12px; height: 12px; border-radius: 3px; background: #2563eb; display: inline-block;"></span>
-                                    <span>More</span>
-                                </div>
-                                <span>Today</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Topic Mastery Horizontal Bar Chart -->
-                    <div class="card">
-                        <h3 class="card-heading" style="margin-bottom: 16px;">Top Topic Breakdown</h3>
-                        <div style="height:180px;">
-                            <canvas id="analyticsTopicChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Milestones Achievement List -->
-                    <div class="card" style="grid-column: span 3;">
-                        <h3 class="card-heading">🏆 Earned Career Milestones & Achievements</h3>
-                        <div id="analytics-milestones-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:16px;">
-                            <p class="empty-state" style="margin:0; padding:10px 0; font-size:0.85rem;">No completed milestones recorded yet. Finish active roadmaps to list achievements here!</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW: Settings -->
-            <section id="view-settings" class="content-view">
-                <div class="welcome-banner">
-                    <div>
-                        <h1 class="welcome-title">Settings & Profile</h1>
-                        <p class="welcome-subtitle">Configure your professional identity and link your profiles.</p>
-                    </div>
-                </div>
-                
-                <div class="settings-container" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; width: 100%;">
-                    <!-- Main Form Card -->
-                    <div class="card" style="padding: 24px;">
-                        <h3 class="card-heading" style="margin-bottom: 20px;">👤 Professional Profile</h3>
-                        <form id="settings-profile-form" onsubmit="event.preventDefault();" style="display: flex; flex-direction: column; gap: 20px;">
-                            
-                            <!-- Section 1: Contact Details -->
-                            <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px;">
-                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Personal Details</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Full Name</label>
-                                        <input id="settings-name" type="text" placeholder="e.g. John Doe" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
-                                    </div>
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Email Address</label>
-                                        <input id="settings-email" type="email" placeholder="e.g. john@example.com" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Phone Number</label>
-                                    <input id="settings-phone" type="text" placeholder="e.g. +1 (555) 019-2834" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
-                                </div>
-                            </div>
-
-                            <!-- Section 2: Online Presence -->
-                            <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
-                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Professional Links</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">LinkedIn URL</label>
-                                        <input id="settings-linkedin" type="text" placeholder="linkedin.com/in/username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
-                                    </div>
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">GitHub Profile</label>
-                                        <input id="settings-github" type="text" placeholder="github.com/username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Portfolio Website</label>
-                                    <input id="settings-portfolio" type="text" placeholder="e.g. https://myportfolio.dev" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
-                                </div>
-                            </div>
-
-                            <!-- Section 3: Professional Background -->
-                            <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
-                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Background & Experience</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Education</label>
-                                        <textarea id="settings-education" placeholder="e.g. B.S. in Computer Science - Stanford (2025)" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
-                                    </div>
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Experience</label>
-                                        <textarea id="settings-experience" placeholder="e.g. Software Engineer Intern at Meta (Summer 2024)" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
-                                    </div>
-                                </div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Projects</label>
-                                        <textarea id="settings-projects" placeholder="e.g. Distributed Key-Value Store, HireMate career app" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
-                                    </div>
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Certifications</label>
-                                        <textarea id="settings-certifications" placeholder="e.g. AWS Certified Solutions Architect, Google Analytics" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
-                                    </div>
-                                </div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Skills (comma-separated)</label>
-                                        <textarea id="settings-skills" placeholder="e.g. Python, SQL, React, Docker, Data Structures" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
-                                    </div>
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Resume URL or Summary</label>
-                                        <textarea id="settings-resume" placeholder="Paste link to hosted resume (e.g. Google Drive/Dropbox) or paste text summary." class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Additional Coding Profiles (Legacy support) -->
-                            <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
-                                <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Coding Stats Profiles</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">LeetCode Username</label>
-                                        <input id="settings-leetcode" type="text" placeholder="LeetCode username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
-                                    </div>
-                                    <div>
-                                        <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Codeforces Username</label>
-                                        <input id="settings-codeforces" type="text" placeholder="Codeforces username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button type="button" id="btn-save-profiles" class="cta-button" style="padding: 14px; margin-top: 10px; font-size: 0.95rem; width: 100%; font-weight: 700; cursor: pointer;">
-                                Save Professional Profile
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Right Column Info & Actions -->
-                    <div style="display: flex; flex-direction: column; gap: 24px;">
-                        <!-- Status Summary Card -->
-                        <div class="card" style="padding: 20px;">
-                            <h3 class="card-heading" style="margin-bottom: 16px;">📋 Profile Status</h3>
-                            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; color: var(--text-muted);">
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
-                                    <span>User Name:</span>
-                                    <strong id="profile-user-name" style="color: var(--text-main); font-weight: 700;">Loading...</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
-                                    <span>LeetCode Sync:</span>
-                                    <span id="summary-leetcode" style="font-weight: 600;">Loading...</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
-                                    <span>GitHub Sync:</span>
-                                    <span id="summary-github" style="font-weight: 600;">Loading...</span>
-                                </div>
-                            </div>
-                            <button class="btn-outline-primary" style="color: var(--danger); border-color: var(--danger); width: 100%; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: 600; margin-top: 20px; cursor: pointer;" onclick="handleLogout()">
-                                Sign Out / Log Out
-                            </button>
-                        </div>
-
-                        <!-- Achievements / Milestones Card -->
-                        <div class="card" style="padding: 20px;">
-                            <h3 class="card-heading" style="margin-bottom: 16px;">🏆 Earned Milestones</h3>
-                            <div id="profile-milestones-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 250px; overflow-y: auto; padding-right: 4px;">
-                                <p class="empty-state" style="margin: 0; padding: 10px 0; font-size: 0.85rem;">No milestone achievements earned yet.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-
-
-    <!-- Error Toast -->
-    <div id="toast" role="alert">
-        <span id="toast-message">Oops! Something went wrong.</span>
-    </div>
-
-    <!-- Floating Brutal Mentor Mode Button & Modal (Optional/Fallback) -->
-    <button id="mentor-mode-btn" title="Brutal AI Mentor" style="display:none;">
-        🔥 Brutal Mentor Mode
-    </button>
-    <div id="mentor-modal" style="display: none;">
-        <div>
-            <button id="mentor-modal-close" style="position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">×</button>
-            <h2 style="color:#f97316; margin-bottom:6px;">🔥 Brutal Mentor Mode</h2>
-            <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">
-                Get unfiltered, harsh, career-changing advice from your AI mentor.
-            </p>
-            <label class="input-label">Your Career Goal</label>
-            <input id="mentor-goal" type="text" placeholder="e.g. Backend Engineer at Google" class="skill-input" style="width:100%; padding:12px; margin:8px 0 16px; box-sizing:border-box;" />
-            <label class="input-label">Your Current Skills (comma-separated)</label>
-            <input id="mentor-skills" type="text" placeholder="e.g. React, HTML, CSS, JavaScript" class="skill-input" style="width:100%; padding:12px; margin:8px 0 20px; box-sizing:border-box;" />
-            <button id="mentor-submit-btn" class="cta-button" style="width:100%; padding:14px; background: linear-gradient(135deg,#f97316,#dc2626); color:white; font-size:1rem; font-weight:700; cursor:pointer;">Get Brutal Advice ⚡</button>
-            <div id="mentor-result" style="margin-top:20px;"></div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Injecting ENV for Supabase
-        window.ENV = {
-            SUPABASE_URL: 'https://plighgmhjeuyxrsjryvc.supabase.co',
-            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsaWdoZ21oamV1eXhyc2pyeXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMDkyODksImV4cCI6MjA5OTg4NTI4OX0.0PBV65i4Ki9kWj4AjQ-FlJ0VC1z1H0JZUzdvgtPjlYQ'
-        };
-    </script>
-    <script src="/static/js/supabaseClient.js" charset="UTF-8"></script>
-    <script src="/static/js/app.js" charset="UTF-8"></script>
-    <script>
-        async function handleLogout() {
-            // Step 1: Sign out from Supabase globally (invalidates server-side session too)
-            if (window.supabaseClient) {
-                try {
-                    await window.supabaseClient.auth.signOut({ scope: 'global' });
-                } catch (e) {
-                    console.warn("Supabase signOut error (continuing logout):", e);
-                }
-            }
-
-            // Step 2: Wipe all Supabase-related keys from localStorage
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('sb-') || key.startsWith('supabase') || key.startsWith('profile_')) {
-                    localStorage.removeItem(key);
-                }
-            });
-
-            // Step 3: Wipe all sessionStorage keys
-            sessionStorage.clear();
-
-            // Step 4: Clear all cookies for this domain
-            document.cookie.split(";").forEach(cookie => {
-                const eqPos = cookie.indexOf("=");
-                const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-            });
-
-            // Step 5: Hard redirect — replace history entry so back button can't return
-            window.location.replace('/login-page');
-        }
-    </script>
+ <div class="app-layout">
+ <!-- Sidebar -->
+ <aside class="sidebar">
+ <div class="brand">
+ <span class="brand-icon">&lt;/&gt;</span>
+ <span class="brand-name">HireMate</span>
+ </div>
+ 
+ <nav class="nav-menu">
+ <button class="nav-item active" id="btn-sidebar-dashboard" data-view="view-dashboard">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="10" rx="1"/><rect width="7" height="5" x="3" y="14" rx="1"/></svg>
+ </span>
+ <span class="nav-label">Dashboard</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-jobs" data-view="view-jobs">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-briefcase"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+ </span>
+ <span class="nav-label">Jobs</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-learning" data-view="view-learning">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+ </span>
+ <span class="nav-label">Learning</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-practice" data-view="view-practice">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+ </span>
+ <span class="nav-label">Practice</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-resume" data-view="view-resume">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+ </span>
+ <span class="nav-label">Resume Review</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-interviews" data-view="view-interviews">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+ </span>
+ <span class="nav-label">Mock Interviews</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-mentor" data-view="view-mentor">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flame"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+ </span>
+ <span class="nav-label">AI Mentor</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-projects" data-view="view-projects">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+ </span>
+ <span class="nav-label">Projects</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-analytics" data-view="view-analytics">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+ </span>
+ <span class="nav-label">Analytics</span>
+ </button>
+ <button class="nav-item" id="btn-sidebar-settings" data-view="view-settings">
+ <span class="nav-icon">
+ <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+ </span>
+ <span class="nav-label">Settings</span>
+ </button>
+ </nav>
+
+ <div class="streak-widget">
+ <div class="streak-header">
+ <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flame" style="vertical-align: middle; margin-right: 4px; color: var(--warning);"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+ Current Streak
+ </div>
+ <div class="streak-body">
+ <span class="streak-days" id="sidebar-streak-days">0 Days</span>
+ <div class="streak-sparkline" id="sidebar-streak-chart">
+ <canvas id="sidebarSparklineCanvas" style="height:30px; width:100%;"></canvas>
+ </div>
+ </div>
+ </div>
+ </aside>
+
+ <!-- Main Content Area -->
+ <main class="main-content">
+ <!-- Top Bar -->
+ <header class="top-bar">
+ <div class="search-box" id="global-search-trigger">
+ <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+ <input type="text" placeholder="Search anything..." readonly>
+ <span class="search-shortcut">⌘K</span>
+ </div>
+ <div class="top-actions">
+ <button class="btn-icon-only" aria-label="Notifications" id="notifications-btn">
+ <span class="action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+ </button>
+ <div class="user-avatar" id="user-avatar-initials">SP</div>
+ </div>
+ </header>
+
+ <!-- VIEW: Dashboard -->
+ <section id="view-dashboard" class="content-view active">
+ <div class="welcome-banner">
+ <div>
+ <h1 class="welcome-title" id="welcome-title-banner">Welcome back!</h1>
+ <p class="welcome-subtitle">Track your progress and get personalized recommendations.</p>
+ </div>
+ <div class="welcome-filter">
+ <select class="select-clean">
+ <option>This Week</option>
+ <option>This Month</option>
+ </select>
+ </div>
+ </div>
+
+ <div class="dashboard-grid">
+ <!-- Learning Progress Card -->
+ <div class="card card-progress">
+ <h3 class="card-heading">Learning Progress</h3>
+ <div class="progress-container-row">
+ <div class="circular-progress-wrap">
+ <svg class="progress-ring" width="120" height="120">
+ <circle class="progress-ring-bg" stroke="#f1f5f9" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+ <circle class="progress-ring-bar" id="dashboard-progress-ring-bar" stroke="#2563eb" stroke-dasharray="314.16" stroke-dashoffset="314.16" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+ </svg>
+ <div class="progress-text-overlay">
+ <span class="progress-pct" id="dashboard-progress-pct">0%</span>
+ <span class="progress-sub" id="dashboard-progress-count">0 / 500</span>
+ </div>
+ </div>
+ <div class="progress-bars-list">
+ <div class="p-bar-item">
+ <div class="p-bar-labels">
+ <span id="dsa-progress-label-text">DSA</span>
+ <span id="dsa-progress-label-pct">0%</span>
+ </div>
+ <div class="p-bar-track">
+ <div class="p-bar-fill" id="dsa-progress-bar-fill" style="width: 0%;"></div>
+ </div>
+ </div>
+ <div class="p-bar-item">
+ <div class="p-bar-labels">
+ <span>System Design</span>
+ <span id="sd-progress-label-pct">0%</span>
+ </div>
+ <div class="p-bar-track">
+ <div class="p-bar-fill" id="sd-progress-bar-fill" style="width: 0%;"></div>
+ </div>
+ </div>
+ <div class="p-bar-item">
+ <div class="p-bar-labels">
+ <span>AI/ML</span>
+ <span id="aiml-progress-label-pct">0%</span>
+ </div>
+ <div class="p-bar-track">
+ <div class="p-bar-fill" id="aiml-progress-bar-fill" style="width: 0%;"></div>
+ </div>
+ </div>
+ <div class="p-bar-item">
+ <div class="p-bar-labels">
+ <span>Development</span>
+ <span id="dev-progress-label-pct">0%</span>
+ </div>
+ <div class="p-bar-track">
+ <div class="p-bar-fill" id="dev-progress-bar-fill" style="width: 0%;"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- Resume Score Card -->
+ <div class="card card-resume-score">
+ <h3 class="card-heading">Resume Score</h3>
+ <div class="resume-score-body">
+ <div class="score-row">
+ <div class="doc-icon"></div>
+ <div class="score-col">
+ <span class="score-big" id="dashboard-resume-score">N/A</span>
+ <span class="score-verdict" id="dashboard-resume-verdict" style="color:var(--text-muted);">No Upload</span>
+ </div>
+ </div>
+ <ul class="score-checks">
+ <li><span class="check-icon"></span> Impact: <strong id="dashboard-resume-impact">N/A</strong></li>
+ <li><span class="check-icon"></span> Skills Match: <strong id="dashboard-resume-skills">N/A</strong></li>
+ <li><span class="check-icon"></span> ATS Score: <strong id="dashboard-resume-ats">N/A</strong></li>
+ </ul>
+ <button class="btn-outline-primary" id="dashboard-improve-resume-btn">Improve Resume</button>
+ </div>
+ </div>
+
+ <!-- Upcoming Card -->
+ <div class="card card-upcoming">
+ <h3 class="card-heading">Upcoming</h3>
+ <div class="upcoming-list">
+ <div class="upcoming-item">
+ <div class="item-icon-box bg-blue-light"></div>
+ <div class="item-details">
+ <span class="item-title">Mock Interview</span>
+ <span class="item-sub">Behavioral Round</span>
+ <span class="item-time">May 24, 5:00 PM</span>
+ </div>
+ </div>
+ <div class="upcoming-item">
+ <div class="item-icon-box bg-indigo-light"></div>
+ <div class="item-details">
+ <span class="item-title">System Design</span>
+ <span class="item-sub">Rate Limiter Design</span>
+ <span class="item-time">May 26, 7:00 PM</span>
+ </div>
+ </div>
+ <div class="upcoming-item">
+ <div class="item-icon-box bg-green-light"></div>
+ <div class="item-details">
+ <span class="item-title">DSA Practice</span>
+ <span class="item-sub">Arrays & Hashing</span>
+ <span class="item-time">May 26, 6:00 PM</span>
+ </div>
+ </div>
+ </div>
+ <button class="btn-link-action" id="dashboard-view-calendar-btn">View Calendar</button>
+ </div>
+
+ <!-- Practice Overview Card -->
+ <div class="card card-practice-overview">
+ <h3 class="card-heading">Practice Overview</h3>
+ <div class="practice-kpi-row">
+ <div class="kpi-item">
+ <span class="kpi-num" id="overview-solved-count">0</span>
+ <span class="kpi-label">Problems Solved</span>
+ </div>
+ <div class="kpi-item">
+ <span class="kpi-num" id="overview-success-rate">0%</span>
+ <span class="kpi-label">Success Rate</span>
+ </div>
+ <div class="kpi-item">
+ <span class="kpi-num" id="overview-streak">0</span>
+ <span class="kpi-label">Contests</span>
+ </div>
+ </div>
+ <div class="practice-chart-wrap">
+ <canvas id="dashboardConsistencyChart"></canvas>
+ </div>
+ </div>
+
+ <!-- AI Recommendations Card -->
+ <div class="card card-recommendations">
+ <h3 class="card-heading">AI Recommendations</h3>
+ <span class="recommendations-sub"> Personalized for your goals</span>
+ <div class="recommendations-list">
+ <div class="rec-item" id="rec-item-graphs">
+ <div class="rec-icon"></div>
+ <div class="rec-text">
+ <span class="rec-title">Focus on Graph Algorithms</span>
+ <span class="rec-desc">High impact for coding interviews</span>
+ </div>
+ <span class="rec-arrow">→</span>
+ </div>
+ <div class="rec-item" id="rec-item-sysdesign">
+ <div class="rec-icon"></div>
+ <div class="rec-text">
+ <span class="rec-title">Improve System Design</span>
+ <span class="rec-desc">Practice scalability concepts</span>
+ </div>
+ <span class="rec-arrow">→</span>
+ </div>
+ </div>
+ </div>
+
+ <!-- Active Learning Roadmap Card -->
+ <div class="card card-active-roadmap" id="dashboard-active-roadmap-card" style="grid-column: span 2;">
+ <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+ <h3 class="card-heading" style="margin-bottom:0;"> Active Learning Roadmap</h3>
+ <div id="dashboard-active-roadmap-header-meta" style="display:none; align-items:center; gap:8px;">
+ <span class="pill-badge" id="dashboard-active-roadmap-skill" style="background:var(--primary-light); color:var(--primary); font-weight:600; font-size:0.85rem; padding:6px 12px; border-radius:100px;"></span>
+ <button id="btn-dashboard-untrack" title="Stop tracking this roadmap" style="background:transparent; border:none; cursor:pointer; font-size:1.1rem; padding:4px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); transition:color 0.2s; outline:none;"></button>
+ </div>
+ </div>
+ 
+ <!-- Empty State -->
+ <div id="dashboard-active-roadmap-empty" style="text-align:center; padding:30px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
+ <div style="font-size:3rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));"></div>
+ <h4 style="font-family:'Outfit',sans-serif; font-size:1.15rem; color:var(--text-main); margin:0;">No active roadmap tracked yet</h4>
+ <p style="font-size:0.85rem; color:var(--text-muted); max-width:340px; margin:0; line-height:1.6;">
+ Accelerate your career by generating a customized AI Roadmap in the <strong>Learning</strong> tab, then click <strong>"Track this Roadmap"</strong> to monitor your progress.
+ </p>
+ <button class="btn-primary" id="btn-dashboard-go-learning" style="padding:10px 20px; font-size:0.85rem; border-radius:var(--radius-md); font-weight:600; cursor:pointer; border:none; background:var(--primary); color:white; transition:all 0.2s;">
+ Go to Learning Tab
+ </button>
+ </div>
+
+ <!-- Active State -->
+ <div id="dashboard-active-roadmap-content" style="display:none; flex-direction:column; gap:20px;">
+ <!-- Roadmap Progress Bar and Status -->
+ <div style="background:var(--bg-main); border:1px solid var(--border); padding:16px 20px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:12px;">
+ <div style="display:flex; justify-content:space-between; align-items:center;">
+ <span id="dashboard-roadmap-progress-text" style="font-size:0.875rem; color:var(--text-sub); font-weight:600;">Progress: 0% (0 / 0 steps completed)</span>
+ <span id="dashboard-roadmap-pct-badge" style="font-weight:700; color:var(--primary); font-family:'Outfit',sans-serif; font-size:1.1rem;">0%</span>
+ </div>
+ <div style="background:var(--border); height:8px; border-radius:4px; overflow:hidden; width:100%;">
+ <div id="dashboard-roadmap-progress-bar" style="background:var(--primary); height:100%; width:0%; transition:width 0.4s ease;"></div>
+ </div>
+ </div>
+
+ <!-- Scrollable Roadmap Checklist -->
+ <div id="dashboard-roadmap-checklist" style="display:flex; flex-direction:column; gap:12px; max-height:300px; overflow-y:auto; padding-right:8px;">
+ <!-- Steps will be dynamically rendered here -->
+ </div>
+ </div>
+ </div>
+
+ <!-- Saved Playlists Progress Card -->
+ <div class="card card-saved-playlists" style="grid-column: span 2;">
+ <h3 class="card-heading">Saved Playlists & Progress</h3>
+ <div style="display:flex; gap:24px; margin-bottom:20px; flex-wrap:wrap;">
+ <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 20px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:4px; min-width:140px;">
+ <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Playlists Saved</span>
+ <strong id="saved-playlists-count" style="font-size:1.5rem; color:var(--text-main); font-family:'Outfit',sans-serif;">0</strong>
+ </div>
+ <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 20px; border-radius:var(--radius-md); display:flex; flex-direction:column; gap:4px; min-width:140px;">
+ <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Completed</span>
+ <strong id="completed-playlists-count" style="font-size:1.5rem; color:var(--success); font-family:'Outfit',sans-serif;">0</strong>
+ </div>
+ </div>
+ <div id="saved-playlists-list" style="display:flex; flex-direction:column; gap:16px;">
+ <p class="empty-state" style="padding:10px 0; font-size:0.9rem; margin:0;">No playlists saved yet. Go to the Learning tab to search and save playlists.</p>
+ </div>
+ </div>
+
+ <!-- Skill Distribution Card -->
+ <div class="card card-distribution">
+ <h3 class="card-heading">Skill Distribution</h3>
+ <div class="distribution-body">
+ <div class="distribution-chart-wrap">
+ <canvas id="dashboardSkillDistributionChart"></canvas>
+ </div>
+ <div class="distribution-legend">
+ <div class="legend-item"><span class="legend-dot dot-dsa"></span> DSA <span class="legend-pct" id="legend-pct-dsa">0%</span></div>
+ <div class="legend-item"><span class="legend-dot dot-sd"></span> System Design <span class="legend-pct" id="legend-pct-sd">0%</span></div>
+ <div class="legend-item"><span class="legend-dot dot-aiml"></span> AI/ML <span class="legend-pct" id="legend-pct-aiml">0%</span></div>
+ <div class="legend-item"><span class="legend-dot dot-dev"></span> Development <span class="legend-pct" id="legend-pct-dev">0%</span></div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <!-- VIEW: Jobs -->
+ <section id="view-jobs" class="content-view">
+ <div class="jobs-header">
+ <div class="jobs-title-area">
+ <h2 class="section-title"> Job Opportunities</h2>
+ <p class="section-subtitle">Premium developer positions matched with your career readiness score and dashboard milestones</p>
+ </div>
+ <div class="jobs-stats">
+ <div class="job-stat-card">
+ <span class="stat-num" id="total-jobs-count">6</span>
+ <span class="stat-label">Matching Roles</span>
+ </div>
+ <div class="job-stat-card">
+ <span class="stat-num" id="saved-jobs-count">0</span>
+ <span class="stat-label">Saved Roles</span>
+ </div>
+ </div>
+ </div>
+
+ <!-- Filters -->
+ <div class="jobs-filter-panel">
+ <div class="search-box">
+ <span class="search-icon"></span>
+ <input type="text" id="job-search-input" placeholder="Search roles, location, or keywords...">
+ <button id="btn-job-search" class="btn-job-apply" style="margin-left: 8px; padding: 6px 12px; font-size: 0.8rem; flex-shrink: 0;">Search</button>
+ </div>
+ <div class="filter-options">
+ <select id="job-type-filter">
+ <option value="all">All Types</option>
+ <option value="Full-time">Full-time</option>
+ <option value="Remote">Remote</option>
+ <option value="Internship">Internship</option>
+ </select>
+ <select id="job-sort-filter">
+ <option value="match">Highest Match</option>
+ <option value="salary">Highest Salary</option>
+ </select>
+ </div>
+ </div>
+
+ <!-- Jobs Grid -->
+ <div class="jobs-grid" id="jobs-list-grid">
+ <!-- Dynamic Job Cards will be rendered here -->
+ </div>
+ </section>
+
+ <!-- VIEW: Learning -->
+ <section id="view-learning" class="content-view">
+ <!-- Search Panel -->
+ <div class="search-panel">
+ <div class="search-form">
+ <div class="input-group">
+ <input 
+ type="text" 
+ id="skill-input" 
+ class="skill-input" 
+ placeholder="What do you want to learn?" 
+ aria-label="Skill to learn"
+ autocomplete="off"
+ >
+ </div>
+ <select id="level-dropdown" class="level-dropdown" aria-label="Skill level">
+ <option value="Beginner"> Beginner</option>
+ <option value="Intermediate"> Intermediate</option>
+ <option value="Advanced"> Advanced</option>
+ </select>
+ <select id="language-dropdown" class="level-dropdown" aria-label="Learning language">
+ <option value="English"> English</option>
+ <option value="Hindi"> Hindi</option>
+ <option value="Telugu"> Telugu</option>
+ </select>
+ <button id="cta-button" class="cta-button">
+ Find Resources
+ </button>
+ </div>
+ </div>
+
+ <!-- Loading Indicator -->
+ <div id="loading" class="loading-indicator">
+ <div class="spinner"></div>
+ <p>Curating the best resources for you...</p>
+ </div>
+
+ <!-- Tab Switcher -->
+ <div id="results-nav" class="results-tabs" style="display: none;">
+ <button id="tab-playlists" class="tab-btn active"> Resources</button>
+ <button id="tab-certificates" class="tab-btn"> Certifications</button>
+ <button id="tab-roadmap" class="tab-btn"> AI Roadmap</button>
+ <span id="tier-label-badge" style="margin-left:auto; font-size:0.75rem; opacity:0.7; align-self:center;"></span>
+ </div>
+
+ <!-- View Step 1: YouTube Playlists -->
+ <div id="playlist-step" class="results-step active">
+ <div class="step-header">
+ <h2 class="step-title"> Core Video Resources</h2>
+ <p class="step-desc" id="tier-indicator">The best free curated playlists to build your foundation.</p>
+ </div>
+ <!-- AI Mentorship Recommendations (Tier 3) -->
+ <div id="ai-recommendations" style="display: none; margin-bottom: 30px;">
+ <h3 style="margin-bottom: 15px; font-family:'Outfit', sans-serif;"> AI Mentor Recommendations</h3>
+ <div id="ai-recommendations-grid" class="results-grid"></div>
+ </div>
+ <!-- Standard / Fallback Grid -->
+ <div id="playlist-grid" class="results-grid"></div>
+ </div>
+
+ <div id="certificate-step" class="results-step">
+ <div class="step-header">
+ <h2 class="step-title"> Professional Certifications</h2>
+ <p class="step-desc">Validated programs from Coursera, Udemy, edX, etc.</p>
+ </div>
+ <div id="certificate-grid" class="results-grid"></div>
+ </div>
+
+ <!-- View Step: AI Roadmap -->
+ <div id="roadmap-step" class="results-step">
+ <div class="step-header">
+ <h2 class="step-title"> Your Career Accelerator Roadmap</h2>
+ <p class="step-desc">A step-by-step path tailored for you by Groq AI.</p>
+ </div>
+ <div id="roadmap-content" style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; display:flex; flex-direction:column; gap:20px;"></div>
+ </div>
+
+ <div id="empty-state" class="empty-state">
+ <p>Enter a skill above to generate your learning path.</p>
+ </div>
+ </section>
+
+ <!-- VIEW: Practice (LeetCode Command Center) -->
+ <section id="view-practice" class="content-view">
+ <!-- DSA Category View (COMMAND CENTER) -->
+ <div id="dsa-prep-content">
+ <!-- Company-wise lists -->
+ <div class="dsa-workspace">
+ <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+ <h2 style="font-family:'Outfit', sans-serif; font-weight:800; font-size:1.5rem;">Problem Database</h2>
+ </div>
+ 
+ <!-- Filters -->
+ <div class="search-panel" style="padding:20px; display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
+ <input type="text" id="company-search" placeholder="Search Company (e.g. Google)..." class="skill-input" style="flex:1; padding:10px 16px;">
+ <select id="filter-difficulty" class="level-dropdown" style="padding:10px 16px;">
+ <option value="All">All Difficulties</option>
+ <option value="Easy">Easy</option>
+ <option value="Medium">Medium</option>
+ <option value="Hard">Hard</option>
+ </select>
+ <select id="filter-status" class="level-dropdown" style="padding:10px 16px;">
+ <option value="All">All Statuses</option>
+ <option value="Pending">Pending</option>
+ <option value="Completed">Completed</option>
+ </select>
+ </div>
+
+ <!-- Company Grid (Visible initially) -->
+ <div id="company-selection" class="company-selection">
+ <div id="companies-grid" class="companies-grid">
+ <!-- Loaded dynamically -->
+ </div>
+ </div>
+
+ <!-- Questions List (Visible after company selection) -->
+ <div id="questions-view" class="questions-view" style="display: none; margin-top: 24px;">
+ <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+ <h3 id="selected-company-title" class="company-title" style="margin:0; font-family:'Outfit', sans-serif;">Company Name</h3>
+ <button id="back-to-companies" class="btn-back">← Change Company</button>
+ </div>
+ <div id="questions-grid" class="results-grid">
+ <!-- Loaded dynamically -->
+ </div>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <!-- VIEW: Resume Review (Resume Analyzer) -->
+ <section id="view-resume" class="content-view">
+ <div id="resume-analyzer-content">
+ <div class="resume-analyzer-ui">
+ <div class="resume-meta-inputs" id="resume-meta-inputs">
+ <div class="input-group">
+ <label class="input-label">Target Role</label>
+ <input type="text" id="target-role" class="skill-input" placeholder="e.g. Software Engineer, Data Scientist" style="padding:12px 16px;">
+ </div>
+ <div class="input-group">
+ <label class="input-label">Benchmark Standard</label>
+ <select id="target-benchmark" class="level-dropdown" style="padding:12px 16px; width:100%;">
+ <option value="FAANG">FAANG / Top Tier</option>
+ <option value="Tier-1 Startup">Tier-1 Startup</option>
+ <option value="Average Company" selected>Average Company</option>
+ </select>
+ </div>
+ </div>
+
+ <div class="upload-zone" id="upload-zone">
+ <div class="upload-icon"></div>
+ <h3 style="font-family:'Outfit', sans-serif; font-weight:700;">Upload your Resume</h3>
+ <p style="color:var(--text-sub); font-size:0.9rem; margin-top:4px;">Drag and drop your PDF or DOCX file here, or click to browse.</p>
+ <input type="file" id="resume-upload" hidden accept=".pdf,.doc,.docx">
+ <button class="cta-button" id="btn-trigger-upload" style="margin-top: 20px; padding:12px 24px;">
+ Analyze Resume
+ </button>
+ </div>
+
+ <div id="analysis-status" class="analysis-status" style="display: none; text-align:center; padding:40px;">
+ <div class="spinner"></div>
+ <p id="status-text" style="color:var(--text-sub); font-weight:600;">Scanning for keywords...</p>
+ </div>
+
+ <!-- Real Analysis Results -->
+ <div id="analysis-results" class="analysis-results" style="display: none;">
+ <div class="results-header">
+ <div class="decision-wrap">
+ <div class="score-meta">
+ <h3 id="res-score-value" class="score-value" style="font-family:'Outfit', sans-serif; font-size:2rem; font-weight:800;">0/10</h3>
+ <span id="res-market" class="pill-badge" style="background:var(--primary-light); color:var(--primary); font-weight:700;">Market: Top 5%</span>
+ </div>
+ <div class="verdict-pill-wrap">
+ <span id="res-verdict-pill" class="decision-pill select">SHORTLIST</span>
+ </div>
+ </div>
+ <div class="verdict-box">
+ <p id="res-brutal-summary" class="verdict-text"></p>
+ </div>
+ </div>
+
+ <div class="evaluation-grid" style="display:grid; grid-template-columns: 1fr; gap:24px;">
+ <!-- STAGE 1: ATS -->
+ <div class="card">
+ <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;"> STAGE 1: ATS Simulation</h4>
+ <div style="display:flex; gap:24px; margin-bottom:16px;">
+ <div>
+ <span style="font-size:0.8rem; color:var(--text-muted); display:block;">Keyword Match</span>
+ <strong id="res-ats-match" style="font-size:1.5rem; color:var(--text-main);">0%</strong>
+ </div>
+ <div>
+ <span style="font-size:0.8rem; color:var(--text-muted); display:block;">Pass Probability</span>
+ <strong id="res-ats-prob" style="font-size:1.5rem; color:var(--text-main);">High</strong>
+ </div>
+ </div>
+ <div>
+ <p style="font-size:0.85rem; font-weight:600; color:var(--text-sub); margin-bottom:6px;">Missing Critical Keywords:</p>
+ <ul id="res-ats-missing" class="keyword-tags" style="display:flex; flex-wrap:wrap; gap:8px; list-style:none;"></ul>
+ </div>
+ </div>
+
+ <!-- STAGE 2: RECRUITER -->
+ <div class="card">
+ <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;"> STAGE 2: Recruiter Scan (10s)</h4>
+ <p id="res-recruiter-impression" style="font-style:italic; font-size:0.9rem; color:var(--text-sub); margin-bottom:16px;"></p>
+ <div>
+ <p style="font-size:0.85rem; font-weight:600; color:var(--text-sub); margin-bottom:6px;">Top Concerns:</p>
+ <ul id="res-recruiter-reasons" class="detailed-list"></ul>
+ </div>
+ </div>
+
+ <!-- STAGE 3: HIRING MANAGER TABLE -->
+ <div class="card">
+ <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;">‍ STAGE 3: Deep Evaluation</h4>
+ <div style="overflow-x:auto;">
+ <table class="evaluation-table">
+ <thead>
+ <tr>
+ <th>Category</th>
+ <th>Weight</th>
+ <th>Score</th>
+ <th>Reasoning</th>
+ </tr>
+ </thead>
+ <tbody id="res-hm-table">
+ <!-- Rows injected by JS -->
+ </tbody>
+ </table>
+ </div>
+ </div>
+
+ <!-- Action Plan & Rewrites -->
+ <div class="card">
+ <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;"> Strategic Action Plan</h4>
+ <div class="action-grid">
+ <div class="action-box">
+ <h5 style="font-weight:700; margin-bottom:10px;">Proposed Projects</h5>
+ <div id="res-action-projects" style="display:flex; flex-direction:column; gap:12px;"></div>
+ </div>
+ <div class="action-box">
+ <h5 style="font-weight:700; margin-bottom:10px;">Tools to Master</h5>
+ <ul id="res-action-tools" class="detailed-list"></ul>
+ </div>
+ </div>
+ </div>
+
+ <div class="card">
+ <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;"> Professional Rewrites</h4>
+ <div id="res-action-rewrites" class="rewrites-container"></div>
+ </div>
+
+ <div class="card">
+ <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;"> Rejection Risk</h4>
+ <p id="res-risk-text" style="color:var(--danger); font-size:0.9rem;"></p>
+ </div>
+ 
+ <div class="card">
+ <h4 style="font-family:'Outfit', sans-serif; font-weight:700; margin-bottom:12px;"> What Works</h4>
+ <ul id="res-works-list" class="detailed-list"></ul>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <!-- VIEW: Mock Interviews -->
+ <section id="view-interviews" class="content-view">
+ <div class="welcome-banner">
+ <div>
+ <h1 class="welcome-title" id="interviews-title">Mock Interview Simulator</h1>
+ <p class="welcome-subtitle" id="interviews-subtitle">Conduct real-time, AI-driven mock interviews and get instant SaaS-level readiness evaluations.</p>
+ </div>
+ </div>
+
+ <!-- STAGE 1: SETUP HUB -->
+ <div id="interview-stage-setup" class="interview-stage active">
+ <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+ <!-- Selection panel -->
+ <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+ <h3 class="card-heading" style="margin-bottom: 4px;"> Launch New Interview</h3>
+ <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">Configure your target parameters to initialize the simulator.</p>
+ 
+ <div class="input-group">
+ <label class="input-label" style="font-weight: 700;">Target Role</label>
+ <input type="text" id="interview-role-input" class="skill-input" placeholder="e.g. Backend Engineer, Fullstack Developer" style="width: 100%; box-sizing: border-box; padding: 12px 16px;">
+ </div>
+
+ <div class="input-group">
+ <label class="input-label" style="font-weight: 700;">Round Type</label>
+ <select id="interview-type-select" class="level-dropdown" style="width: 100%; padding: 12px 16px;">
+ <option value="Coding & DSA"> Coding & Data Structures (DSA)</option>
+ <option value="System Design"> System Design & Scalability</option>
+ <option value="Behavioral"> Behavioral & STAR Method</option>
+ </select>
+ </div>
+
+ <div class="input-group">
+ <label class="input-label" style="font-weight: 700;">Company Benchmark</label>
+ <select id="interview-benchmark-select" class="level-dropdown" style="width: 100%; padding: 12px 16px;">
+ <option value="FAANG">FAANG Tier (Google, Meta, Netflix)</option>
+ <option value="Tier-1 Startup">Tier-1 Startup (Stripe, Uber, Airbnb)</option>
+ <option value="Average Company" selected>Average Tech / Enterprise</option>
+ </select>
+ </div>
+
+ <button id="btn-start-interview" class="cta-button" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), #4f46e5); font-weight: 700; margin-top: 8px;">
+ Start Simulation 
+ </button>
+ </div>
+
+ <!-- Info/Guide panel -->
+ <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+ <div>
+ <h3 class="card-heading" style="margin-bottom: 12px;"> How it works</h3>
+ <ul class="score-checks" style="display: flex; flex-direction: column; gap: 14px; font-size: 0.9rem; color: var(--text-sub);">
+ <li><span class="check-icon" style="color: var(--primary);"></span> <strong>3-Turn Conversation:</strong> The AI interviewer will present an initial question and ask 2 follow-ups to probe your depth.</li>
+ <li><span class="check-icon" style="color: var(--primary);"></span> <strong>STAR/Code templates:</strong> Type your code or detailed answers in the rich editor text area.</li>
+ <li><span class="check-icon" style="color: var(--primary);"></span> <strong>SaaS grading audit:</strong> Get score break-downs, strengths, key weaknesses, and an expert-written sample answer.</li>
+ </ul>
+ </div>
+ <div style="background: rgba(37,99,235,0.08); border-left: 4px solid var(--primary); padding: 14px 18px; border-radius: 8px; margin-top: 16px;">
+ <p style="margin: 0; font-size: 0.825rem; color: var(--primary); font-weight: 600; line-height: 1.5;">
+ Note: Every simulation performance is stored in your personal prep log and integrated into your overall readiness profile.
+ </p>
+ </div>
+ </div>
+ </div>
+
+ <!-- Interview History Section -->
+ <div class="card" style="padding: 24px;">
+ <h3 class="card-heading" style="margin-bottom: 16px;"> Prep History & Audit Logs</h3>
+ <div id="interview-history-list" style="display: flex; flex-direction: column; gap: 14px;">
+ <p class="empty-state" style="margin:0; padding: 20px 0;">No interviews simulated yet. Launch your first round above!</p>
+ </div>
+ </div>
+ </div>
+
+ <!-- STAGE 2: ACTIVE VOICE INTERVIEW CONVERSATION -->
+ <div id="interview-stage-chat" class="interview-stage" style="display: none;">
+ <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; margin-bottom: 24px;">
+ 
+ <!-- Main Recruiter Alex Call Dashboard -->
+ <div class="card" style="padding: 24px; display: flex; flex-direction: column; height: 600px; justify-content: space-between; position: relative;">
+ 
+ <!-- Call Header -->
+ <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+ <div style="display: flex; align-items: center; gap: 12px;">
+ <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; animation: pulse 1.5s infinite;"></div>
+ <strong style="color: var(--text-main); font-size: 1rem; font-family: 'Outfit', sans-serif;">Live Mock Interview Session</strong>
+ </div>
+ <span id="voice-interview-round-label" style="font-size: 0.8rem; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 4px 10px; border-radius: 6px;">Welcome Round</span>
+ </div>
+
+ <!-- Visual Recruiter Call Hub -->
+ <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 20px 0;">
+ 
+ <!-- Interviewer Circle Avatar & Speak Indicators -->
+ <div id="interviewer-avatar-container" style="width: 130px; height: 130px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; font-size: 3.5rem; position: relative; box-shadow: 0 8px 30px rgba(79, 70, 229, 0.3); transition: all 0.3s;">
+ ‍
+ <!-- Animated Wave Rings -->
+ <div class="pulse-ring" style="position: absolute; width: 100%; height: 100%; border: 3px solid var(--primary); border-radius: 50%; opacity: 0.4; animation: ripple 2s infinite;"></div>
+ </div>
+
+ <!-- AI Speech / Voice Transcription Visualizer Wave -->
+ <div style="display: flex; align-items: center; gap: 4px; height: 40px;">
+ <div class="wave-bar" style="width: 4px; height: 8px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.1s;"></div>
+ <div class="wave-bar" style="width: 4px; height: 24px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.3s;"></div>
+ <div class="wave-bar" style="width: 4px; height: 35px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.5s;"></div>
+ <div class="wave-bar" style="width: 4px; height: 18px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.2s;"></div>
+ <div class="wave-bar" style="width: 4px; height: 8px; background: var(--primary); border-radius: 2px; animation: bounceWave 0.8s infinite 0.4s;"></div>
+ </div>
+
+ <!-- Dynamic Text Subtitles Overlay -->
+ <div style="max-width: 480px; text-align: center; margin-top: 10px;">
+ <p id="voice-subtitles-box" style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 500; color: var(--text-main); line-height: 1.6; margin: 0; min-height: 50px;">
+ Initializing call setup... Alex will speak shortly.
+ </p>
+ </div>
+ </div>
+
+ <!-- Audio Player for synthesizing gTTS MP3 streams -->
+ <audio id="voice-audio-element" style="display: none;" autoplay></audio>
+
+ <!-- Microphone Controllers & Control Bar -->
+ <div style="border-top: 1px solid var(--border); padding-top: 20px; display: flex; flex-direction: column; gap: 14px; align-items: center;">
+ 
+ <div style="display: flex; align-items: center; gap: 16px;">
+ <!-- End call -->
+ <button id="btn-end-interview-call" class="btn-outline-primary" style="border-color: #ef4444; color: #ef4444; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;" onclick="window.finishInterviewSession()">
+ 
+ </button>
+ 
+ <!-- Speak Microphone / Push To Talk -->
+ <button id="btn-voice-mic-toggle" style="background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%); color: white; border: none; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; cursor: pointer; box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3); transition: all 0.2s;" onclick="window.toggleSpeechListen()">
+ 
+ </button>
+
+ <!-- Toggle Text Input override fallback -->
+ <button id="btn-toggle-manual-text" class="btn-outline-primary" style="width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;" onclick="window.toggleTextInputOverride()">
+ ⌨
+ </button>
+ </div>
+ 
+ <div id="voice-state-desc-label" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+ Recruiter Speaking...
+ </div>
+ </div>
+
+ <!-- Manual Text Override Box container (collapsible) -->
+ <div id="manual-text-override-container" style="display: none; position: absolute; bottom: 100px; left: 24px; right: 24px; background: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10;">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+ <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-sub);">Text Input Override</span>
+ <button style="background: transparent; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-muted);" onclick="window.toggleTextInputOverride()">×</button>
+ </div>
+ <div style="display: flex; gap: 8px;">
+ <input type="text" id="manual-text-chat-input" placeholder="Type your response instead..." class="skill-input" style="flex: 1; padding: 10px;" />
+ <button class="cta-button" style="padding: 10px 16px;" onclick="window.submitManualTextResponse()">Send</button>
+ </div>
+ </div>
+
+ </div>
+
+ <!-- Right Panel: Camera Preview for posture/eye-contact tracking -->
+ <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 14px; height: 600px; box-sizing: border-box;">
+ <h4 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Camera & Pose Audit</h4>
+ 
+ <!-- Video WebRTC Viewport -->
+ <div id="pose-video-container" style="flex: 1; background: #000; border-radius: 8px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
+ <video id="pose-local-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
+ 
+ <div id="pose-camera-fallback" style="text-align: center; color: #64748b; padding: 20px;">
+ <span style="font-size: 2rem;"></span>
+ <p style="margin: 8px 0 0; font-size: 0.8rem; font-weight: 600;">Camera feeds disabled</p>
+ <button class="btn-outline-primary" style="padding: 6px 12px; font-size: 0.75rem; margin-top: 8px;" onclick="window.enableCameraPoseTracking()">Enable Webcam</button>
+ </div>
+ 
+ <!-- Floating metrics -->
+ <div id="camera-active-tag" style="display: none; position: absolute; top: 12px; left: 12px; background: rgba(16,185,129,0.85); color: white; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">
+ REC ACTIVE
+ </div>
+ </div>
+ 
+ <!-- Body Language Live Feedback Box -->
+ <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.8rem; color: var(--text-sub);">
+ <strong style="color: var(--text-main); display: block; margin-bottom: 4px;">Posture Evaluation</strong>
+ <span id="live-pose-assessment">Camera unavailable. Eye contact and smiles metrics are currently muted.</span>
+ </div>
+ </div>
+
+ </div>
+ </div>
+
+ <!-- STAGE 3: LOADING AUDIT -->
+ <div id="interview-stage-loading" class="interview-stage" style="display: none; padding: 60px 20px; text-align: center;">
+ <div class="card" style="max-width: 500px; margin: 0 auto; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+ <div class="spinner" style="width: 50px; height: 50px; border-width: 5px;"></div>
+ <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.4rem; color: var(--text-main); margin: 0;">Compiling Interview Report</h3>
+ <p id="interview-loading-step" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; font-weight: 500; margin: 0;">Analyzing solution accuracy...</p>
+ <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 10px;">
+ <div id="interview-loading-bar" style="background: var(--primary); height: 100%; width: 10%; transition: width 0.4s ease;"></div>
+ </div>
+ </div>
+ </div>
+
+ <!-- STAGE 4: EVALUATION SCORECARD -->
+ <div id="interview-stage-result" class="interview-stage" style="display: none;">
+ <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+ <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.4rem; margin: 0;">SaaS Evaluation Report</h2>
+ <button id="btn-back-to-hub" class="btn-outline-primary" style="padding: 8px 16px; font-weight: 600; font-size: 0.85rem;">← Back to Prep Hub</button>
+ </div>
+
+ <div class="dashboard-grid" style="grid-template-columns: 340px 1fr; gap: 24px; align-items: start;">
+ <!-- Left Panel: Score and Verdict -->
+ <div class="card" style="padding: 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
+ <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Interview Performance</span>
+ 
+ <!-- Circular Score Ring -->
+ <div class="circular-progress-wrap" style="width: 150px; height: 150px; position: relative; display: flex; align-items: center; justify-content: center;">
+ <svg class="progress-ring" width="150" height="150">
+ <circle class="progress-ring-bg" stroke="var(--border)" stroke-width="10" fill="transparent" r="62" cx="75" cy="75"/>
+ <circle class="progress-ring-bar" id="interview-result-ring" stroke="var(--primary)" stroke-dasharray="389.56" stroke-dashoffset="389.56" stroke-width="10" fill="transparent" r="62" cx="75" cy="75"/>
+ </svg>
+ <div style="position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+ <strong id="interview-result-score-label" style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0%</strong>
+ <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Overall Score</span>
+ </div>
+ </div>
+
+ <!-- Verdict Badge -->
+ <div style="width: 100%;">
+ <span id="interview-result-verdict" class="decision-pill" style="font-size: 1.1rem; font-weight: 800; padding: 10px 24px; border-radius: 12px; display: inline-block; width: 80%; text-align: center; text-transform: uppercase;">Hire</span>
+ </div>
+
+ <!-- Categories list -->
+ <div style="width: 100%; border-top: 1px solid var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 14px; text-align: left;">
+ <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; margin: 0 0 4px 0;">Category Grades</h4>
+ 
+ <div id="interview-result-categories-list" style="display: flex; flex-direction: column; gap: 12px;">
+ <!-- Injected dynamically -->
+ </div>
+ </div>
+ </div>
+
+ <!-- Right Panel: Detailed Audit -->
+ <div style="display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0;">
+ <!-- Recruiter summary -->
+ <div class="card" style="padding: 24px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 10px;">‍ Recruiter Snap Judgment</h4>
+ <p id="interview-result-judgment" style="font-style: italic; font-size: 0.925rem; color: var(--text-sub); line-height: 1.6; margin: 0;"></p>
+ </div>
+
+ <!-- Strengths and Weaknesses -->
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+ <div class="card" style="padding: 20px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--success); margin-bottom: 12px;"> Key Strengths</h4>
+ <ul id="interview-result-strengths" class="detailed-list" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; padding-left: 16px; margin: 0;"></ul>
+ </div>
+ <div class="card" style="padding: 20px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--danger); margin-bottom: 12px;"> Critical Weaknesses</h4>
+ <ul id="interview-result-weaknesses" class="detailed-list" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; padding-left: 16px; margin: 0;"></ul>
+ </div>
+ </div>
+
+ <!-- Action Plan -->
+ <div class="card" style="padding: 24px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 12px;"> Targeted Action Plan</h4>
+ <ul id="interview-result-action-plan" class="detailed-list" style="display: flex; flex-direction: column; gap: 10px; font-size: 0.875rem; padding-left: 16px; margin: 0; line-height: 1.5;"></ul>
+ </div>
+
+ <!-- Ideal Sample Response -->
+ <div class="card" style="padding: 24px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 12px;"> Ideal Expert Response</h4>
+ <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto;">
+ <pre id="interview-result-ideal" style="font-family: 'Courier New', Courier, monospace; font-size: 0.875rem; line-height: 1.6; color: var(--text-main); margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <!-- VIEW: AI Mentor (dedicated consultation space) -->
+ <section id="view-mentor" class="content-view">
+ <div class="welcome-banner">
+ <div>
+ <h1 class="welcome-title">AI Mentor Consultation</h1>
+ <p class="welcome-subtitle">Get unfiltered, harsh, career-changing advice from your AI mentor.</p>
+ </div>
+ </div>
+
+ <!-- Tab selection -->
+ <div class="results-tabs" style="margin:0 auto 24px auto; display:flex; width:100%; max-width:680px; box-sizing:border-box;">
+ <button class="tab-btn active" id="tab-mentor-career" style="flex:1; padding:12px; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:8px;">
+ <span></span> Career Mentor
+ </button>
+ <button class="tab-btn" id="tab-mentor-coding" style="flex:1; padding:12px; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:8px;">
+ <span></span> Coding Mentor
+ </button>
+ </div>
+
+ <!-- Career Mentor Panel -->
+ <div id="panel-mentor-career" class="card" style="max-width:680px; margin:0 auto; display:block;">
+ <h2 style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--text-main); margin-bottom:6px;"> Career Guidance Mentor</h2>
+ <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Receive a strategic assessment of your career roadmap and skills suitability.</p>
+ 
+ <label class="input-label">Your Career Goal</label>
+ <input id="mentor-goal-page" type="text" placeholder="e.g. Backend Engineer at Google" class="skill-input" style="padding:12px; margin-bottom:16px; width:100%; box-sizing:border-box;" />
+ 
+ <label class="input-label">Your Current Skills (comma-separated)</label>
+ <input id="mentor-skills-page" type="text" placeholder="e.g. React, HTML, CSS, JavaScript" class="skill-input" style="padding:12px; margin-bottom:20px; width:100%; box-sizing:border-box;" />
+ 
+ <button id="mentor-submit-btn-page" class="cta-button" style="width:100%; padding:14px; background:linear-gradient(135deg,#f97316,#dc2626); border:none; border-radius:12px; color:white; font-size:1rem; font-weight:700; cursor:pointer;">
+ Get Brutal Career Advice 
+ </button>
+ <div id="mentor-result-page" style="margin-top:20px;"></div>
+ </div>
+
+ <!-- Coding Mentor Panel -->
+ <div id="panel-mentor-coding" class="card" style="max-width:680px; margin:0 auto; display:none;">
+ <h2 style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--text-main); margin-bottom:6px;"> Coding Standings Mentor</h2>
+ <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Your coding profile handles and database metrics will be analyzed to pinpoint where you are lagging.</p>
+ 
+ <!-- Stats / Profiles Summary Grid -->
+ <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+ <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 16px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+ <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">LeetCode Profile</span>
+ <span id="summary-leetcode" style="font-size:0.9rem; font-weight:600; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
+ </div>
+ <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 16px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+ <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">GitHub Profile</span>
+ <span id="summary-github" style="font-size:0.9rem; font-weight:600; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
+ </div>
+ <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 16px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+ <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Codeforces Profile</span>
+ <span id="summary-codeforces" style="font-size:0.9rem; font-weight:600; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
+ </div>
+ <div style="background:var(--bg-main); border:1px solid var(--border); padding:12px 16px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+ <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Codementor Profile</span>
+ <span id="summary-codementor" style="font-size:0.9rem; font-weight:600; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Loading...</span>
+ </div>
+ </div>
+
+ <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:rgba(37,99,235,0.05); border:1px solid rgba(37,99,235,0.15); padding:12px 16px; border-radius:8px;">
+ <span style="font-size:0.8rem; color:var(--text-sub); font-weight:500;">Need to update your coding profiles?</span>
+ <button id="btn-mentor-go-settings" class="btn-outline-primary" style="padding:6px 12px; font-size:0.75rem; border-radius:6px; cursor:pointer;">Go to Settings</button>
+ </div>
+
+ <button id="coding-submit-btn-page" class="cta-button" style="width:100%; padding:14px; background:linear-gradient(135deg,#6366f1,#4f46e5); border:none; border-radius:12px; color:white; font-size:1rem; font-weight:700; cursor:pointer;">
+ Analyze Coding Profiles & DSA 
+ </button>
+ <div id="coding-result-page" style="margin-top:20px;"></div>
+ </div>
+ </section>
+
+ <!-- VIEW: Projects -->
+ <section id="view-projects" class="content-view">
+ <div class="welcome-banner">
+ <div>
+ <h1 class="welcome-title">Projects Workspace</h1>
+ <p class="welcome-subtitle">Manage your project portfolio and view recommended blueprints.</p>
+ </div>
+ </div>
+ 
+ <div class="projects-layout" style="display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start;">
+ <!-- Left: Form Card -->
+ <div class="card">
+ <h3 class="card-heading" style="margin-bottom: 16px;">Add Custom Project</h3>
+ <form id="add-project-form" style="display:flex; flex-direction:column; gap:16px;">
+ <div>
+ <label class="input-label">Project Title</label>
+ <input type="text" id="project-title" class="skill-input" placeholder="e.g. Portfolio Website" required style="padding:10px 14px; font-size: 0.9rem;">
+ </div>
+ <div>
+ <label class="input-label">Category / Tech Stack</label>
+ <input type="text" id="project-category" class="skill-input" placeholder="e.g. Frontend, React" required style="padding:10px 14px; font-size: 0.9rem;">
+ </div>
+ <div>
+ <label class="input-label">Description</label>
+ <textarea id="project-desc" class="skill-input" placeholder="What does the project do?" required style="padding:10px 14px; min-height:80px; font-family:inherit; resize:vertical; font-size: 0.9rem;"></textarea>
+ </div>
+ <button type="submit" class="cta-button" style="padding:12px; font-size:0.9rem;">Add Project</button>
+ </form>
+ </div>
+
+ <!-- Right: Projects Grid -->
+ <div style="display:flex; flex-direction:column; gap:20px;">
+ <h3 class="card-heading" style="margin:0;">Project Portfolio</h3>
+ <div id="projects-list-container" class="results-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+ <!-- Injected dynamically -->
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <!-- VIEW: Analytics -->
+ <section id="view-analytics" class="content-view">
+ <div class="welcome-banner" style="margin-bottom: 24px;">
+ <div>
+ <h1 class="welcome-title" style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.8rem;">Performance & Competency Analytics</h1>
+ <p class="welcome-subtitle">SaaS-level deep assessment of your engineering interview readiness.</p>
+ </div>
+ <div style="display: flex; gap: 12px; align-items: center;">
+ <select id="analytics-timeframe" class="select-clean" style="padding: 10px 16px;">
+ <option value="7">Last 7 Days</option>
+ <option value="30" selected>Last 30 Days</option>
+ <option value="all">All Time</option>
+ </select>
+ <button id="btn-trigger-audit" class="cta-button" style="padding: 10px 20px; font-weight: 700; background: linear-gradient(135deg, var(--primary), #4f46e5); border: none; border-radius: var(--radius-md); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s var(--smooth); box-shadow: var(--shadow-sm);">
+ <span>Generate AI Audit </span>
+ </button>
+ </div>
+ </div>
+
+ <!-- KPI METRICS ROW -->
+ <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px;">
+ <!-- PRI CARD -->
+ <div class="card" style="padding: 20px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 16px;">
+ <div>
+ <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Readiness Score (PRI)</span>
+ <strong id="analytics-pri-score" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0%</strong>
+ <span id="analytics-pri-badge" class="pill-badge" style="font-size: 0.7rem; font-weight: 700; background: var(--primary-light); color: var(--primary); display: inline-block; margin-top: 8px; border-radius: 6px;">Novice</span>
+ </div>
+ <div class="circular-progress-wrap" style="width: 70px; height: 70px; flex-shrink: 0;">
+ <svg class="progress-ring" width="70" height="70">
+ <circle class="progress-ring-bg" stroke="#f1f5f9" stroke-width="6" fill="transparent" r="28" cx="35" cy="35"/>
+ <circle class="progress-ring-bar" id="analytics-pri-ring" stroke="var(--primary)" stroke-dasharray="175.93" stroke-dashoffset="175.93" stroke-width="6" fill="transparent" r="28" cx="35" cy="35"/>
+ </svg>
+ </div>
+ </div>
+
+ <!-- SOLVED COUNTS -->
+ <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
+ <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Practice Problems</span>
+ <strong id="analytics-dsa-count" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0</strong>
+ <div style="display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; font-weight: 600;">
+ <span style="color: var(--success);">Easy: <span id="analytics-dsa-easy">0</span></span>
+ <span style="color: var(--warning);">Med: <span id="analytics-dsa-med">0</span></span>
+ <span style="color: var(--danger);">Hard: <span id="analytics-dsa-hard">0</span></span>
+ </div>
+ </div>
+
+ <!-- STUDY VELOCITY -->
+ <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
+ <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Weekly Study Velocity</span>
+ <strong id="analytics-weekly-velocity" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">0.0</strong>
+ <span style="font-size: 0.75rem; color: var(--text-sub); margin-top: 8px; font-weight: 500;">tasks/week (active learning pace)</span>
+ </div>
+
+ <!-- ATS RESUME SCORE -->
+ <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px;">
+ <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">ATS Resume Standing</span>
+ <strong id="analytics-ats-score" style="font-family:'Outfit',sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">—</strong>
+ <span id="analytics-ats-verdict" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">No Resume Uploaded</span>
+ </div>
+ </div>
+
+ <!-- AI COMPETENCY AUDIT PANEL -->
+ <div id="analytics-audit-panel" class="card" style="margin-bottom: 24px; padding: 24px; background: linear-gradient(to bottom right, #ffffff, #fafafa); display: block; border: 1px solid var(--border); transition: all 0.3s ease;">
+ <!-- Empty/Initial State -->
+ <div id="audit-state-initial" style="text-align: center; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+ <div style="font-size: 2.5rem;">‍</div>
+ <h3 style="font-family:'Outfit',sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--text-main);">AI Competency & Benchmark Audit</h3>
+ <p style="color: var(--text-sub); font-size: 0.85rem; max-width: 460px; line-height: 1.6; margin: 0 0 8px 0;">
+ Get a professional-grade technical assessment of your interview fitness. We compare your current DSA solving stats, roadmap coverage, and resume performance against FAANG & high-growth startup benchmarks.
+ </p>
+ <button id="btn-generate-audit-inner" class="cta-button" style="padding: 10px 24px; font-weight: 700; background: linear-gradient(135deg, var(--primary), #4f46e5); border: none; border-radius: var(--radius-md); color: white; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.875rem;">
+ <span>Generate Audit Report </span>
+ </button>
+ </div>
+
+ <!-- Loading State -->
+ <div id="audit-state-loading" style="display: none; text-align: center; padding: 30px 0;">
+ <div class="spinner" style="margin: 0 auto 16px auto;"></div>
+ <h4 style="font-family:'Outfit',sans-serif; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Running System Audit</h4>
+ <p id="audit-loading-text" style="color: var(--text-muted); font-size: 0.825rem; font-weight: 500; font-style: italic;">Parsing practice patterns...</p>
+ </div>
+
+ <!-- Result State -->
+ <div id="audit-state-result" style="display: none; flex-direction: column; gap: 20px;">
+ <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+ <div>
+ <h3 style="font-family:'Outfit',sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--text-main); margin-bottom: 4px;">Competency Audit Report</h3>
+ <p style="color: var(--text-muted); font-size: 0.8rem; font-weight: 500;">Calculated by Groq Career Intelligence Engine • Realtime</p>
+ </div>
+ <div style="display: flex; align-items: center; gap: 10px;">
+ <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-sub);">Market Ready Level:</span>
+ <span id="audit-market-level" class="pill-badge" style="background: var(--primary-light); color: var(--primary); font-weight: 800; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px;">Junior (L3)</span>
+ </div>
+ </div>
+
+ <div style="background: #f8fafc; border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 0;">
+ <strong style="font-size: 0.85rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Auditor Verdict</strong>
+ <p id="audit-verdict-text" style="color: var(--text-main); font-size: 0.9rem; line-height: 1.5; font-style: italic; margin: 0; font-weight: 500;">"Verdict..."</p>
+ </div>
+
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex-wrap: wrap;">
+ <!-- Gaps & Focus Areas -->
+ <div>
+ <h4 style="font-family:'Outfit',sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+ <span style="color: var(--danger);"></span> Technical Skill Gaps
+ </h4>
+ <ul id="audit-gaps-list" style="padding-left: 20px; font-size: 0.85rem; color: var(--text-sub); display: flex; flex-direction: column; gap: 8px;">
+ <!-- Dynamic list items -->
+ </ul>
+ </div>
+
+ <!-- High-Impact Next Steps -->
+ <div>
+ <h4 style="font-family:'Outfit',sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+ <span style="color: var(--success);"></span> Action Plan Items
+ </h4>
+ <ul id="audit-actions-list" style="padding-left: 20px; font-size: 0.85rem; color: var(--text-sub); display: flex; flex-direction: column; gap: 8px;">
+ <!-- Dynamic list items -->
+ </ul>
+ </div>
+ </div>
+
+ <div style="border-top: 1px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+ <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">
+ Estimated Prep Timeline: <strong id="audit-weeks" style="color: var(--text-main); font-weight: 700;">—</strong> weeks to interview ready
+ </span>
+ <button id="btn-re-audit" style="background: transparent; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--primary); outline: none; transition: color 0.2s;">
+ Run New Audit
+ </button>
+ </div>
+ </div>
+ </div>
+
+ <!-- VISUALIZATION DASHBOARD GRID -->
+ <div class="dashboard-grid">
+ <!-- Cumulative Growth Chart -->
+ <div class="card" style="grid-column: span 2;">
+ <h3 class="card-heading" style="margin-bottom: 16px;">Practice & Learning Velocity</h3>
+ <div style="height:250px;">
+ <canvas id="analyticsGrowthChart"></canvas>
+ </div>
+ </div>
+
+ <!-- Competency Radar Chart -->
+ <div class="card">
+ <h3 class="card-heading" style="margin-bottom: 16px;">Skills Alignment Radar</h3>
+ <div style="height:250px; position: relative;">
+ <canvas id="analyticsRadarChart"></canvas>
+ </div>
+ </div>
+
+ <!-- Consistency Heatmap Grid -->
+ <div class="card" style="grid-column: span 2;">
+ <h3 class="card-heading" style="margin-bottom: 12px;">30-Day Practice Heatmap</h3>
+ <div style="display: flex; flex-direction: column; gap: 12px;">
+ <div id="analytics-heatmap-container" style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; padding: 10px 0;">
+ <!-- Blocks generated by JS -->
+ </div>
+ <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border);">
+ <span>30 days ago</span>
+ <div style="display: flex; align-items: center; gap: 6px;">
+ <span>Less</span>
+ <span style="width: 12px; height: 12px; border-radius: 3px; background: #e2e8f0; display: inline-block;"></span>
+ <span style="width: 12px; height: 12px; border-radius: 3px; background: #dbeafe; display: inline-block;"></span>
+ <span style="width: 12px; height: 12px; border-radius: 3px; background: #93c5fd; display: inline-block;"></span>
+ <span style="width: 12px; height: 12px; border-radius: 3px; background: #2563eb; display: inline-block;"></span>
+ <span>More</span>
+ </div>
+ <span>Today</span>
+ </div>
+ </div>
+ </div>
+
+ <!-- Topic Mastery Horizontal Bar Chart -->
+ <div class="card">
+ <h3 class="card-heading" style="margin-bottom: 16px;">Top Topic Breakdown</h3>
+ <div style="height:180px;">
+ <canvas id="analyticsTopicChart"></canvas>
+ </div>
+ </div>
+ 
+ <!-- Milestones Achievement List -->
+ <div class="card" style="grid-column: span 3;">
+ <h3 class="card-heading"> Earned Career Milestones & Achievements</h3>
+ <div id="analytics-milestones-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:16px;">
+ <p class="empty-state" style="margin:0; padding:10px 0; font-size:0.85rem;">No completed milestones recorded yet. Finish active roadmaps to list achievements here!</p>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <!-- VIEW: Settings -->
+ <section id="view-settings" class="content-view">
+ <div class="welcome-banner">
+ <div>
+ <h1 class="welcome-title">Settings & Profile</h1>
+ <p class="welcome-subtitle">Configure your professional identity and link your profiles.</p>
+ </div>
+ </div>
+ 
+ <div class="settings-container" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; width: 100%;">
+ <!-- Main Form Card -->
+ <div class="card" style="padding: 24px;">
+ <h3 class="card-heading" style="margin-bottom: 20px;"> Professional Profile</h3>
+ <form id="settings-profile-form" onsubmit="event.preventDefault();" style="display: flex; flex-direction: column; gap: 20px;">
+ 
+ <!-- Section 1: Contact Details -->
+ <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Personal Details</h4>
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Full Name</label>
+ <input id="settings-name" type="text" placeholder="e.g. John Doe" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+ </div>
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Email Address</label>
+ <input id="settings-email" type="email" placeholder="e.g. john@example.com" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+ </div>
+ </div>
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Phone Number</label>
+ <input id="settings-phone" type="text" placeholder="e.g. +1 (555) 019-2834" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+ </div>
+ </div>
+
+ <!-- Section 2: Online Presence -->
+ <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Professional Links</h4>
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">LinkedIn URL</label>
+ <input id="settings-linkedin" type="text" placeholder="linkedin.com/in/username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+ </div>
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">GitHub Profile</label>
+ <input id="settings-github" type="text" placeholder="github.com/username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+ </div>
+ </div>
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Portfolio Website</label>
+ <input id="settings-portfolio" type="text" placeholder="e.g. https://myportfolio.dev" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+ </div>
+ </div>
+
+ <!-- Section 3: Professional Background -->
+ <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Background & Experience</h4>
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Education</label>
+ <textarea id="settings-education" placeholder="e.g. B.S. in Computer Science - Stanford (2025)" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+ </div>
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Experience</label>
+ <textarea id="settings-experience" placeholder="e.g. Software Engineer Intern at Meta (Summer 2024)" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+ </div>
+ </div>
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Projects</label>
+ <textarea id="settings-projects" placeholder="e.g. Distributed Key-Value Store, HireMate career app" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+ </div>
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Certifications</label>
+ <textarea id="settings-certifications" placeholder="e.g. AWS Certified Solutions Architect, Google Analytics" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+ </div>
+ </div>
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Skills (comma-separated)</label>
+ <textarea id="settings-skills" placeholder="e.g. Python, SQL, React, Docker, Data Structures" class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+ </div>
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Resume URL or Summary</label>
+ <textarea id="settings-resume" placeholder="Paste link to hosted resume (e.g. Google Drive/Dropbox) or paste text summary." class="skill-input" style="padding: 10px; width: 100%; height: 80px; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
+ </div>
+ </div>
+ </div>
+ 
+ <!-- Additional Coding Profiles (Legacy support) -->
+ <div class="settings-group" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+ <h4 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin: 0;">Coding Stats Profiles</h4>
+ <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">LeetCode Username</label>
+ <input id="settings-leetcode" type="text" placeholder="LeetCode username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+ </div>
+ <div>
+ <label class="input-label" style="font-size: 0.8rem; margin-bottom: 4px; display: block;">Codeforces Username</label>
+ <input id="settings-codeforces" type="text" placeholder="Codeforces username" class="skill-input" style="padding: 10px; width: 100%; box-sizing: border-box;" />
+ </div>
+ </div>
+ </div>
+
+ <button type="button" id="btn-save-profiles" class="cta-button" style="padding: 14px; margin-top: 10px; font-size: 0.95rem; width: 100%; font-weight: 700; cursor: pointer;">
+ Save Professional Profile
+ </button>
+ </form>
+ </div>
+
+ <!-- Right Column Info & Actions -->
+ <div style="display: flex; flex-direction: column; gap: 24px;">
+ <!-- Status Summary Card -->
+ <div class="card" style="padding: 20px;">
+ <h3 class="card-heading" style="margin-bottom: 16px;"> Profile Status</h3>
+ <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; color: var(--text-muted);">
+ <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+ <span>User Name:</span>
+ <strong id="profile-user-name" style="color: var(--text-main); font-weight: 700;">Loading...</strong>
+ </div>
+ <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+ <span>LeetCode Sync:</span>
+ <span id="summary-leetcode" style="font-weight: 600;">Loading...</span>
+ </div>
+ <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+ <span>GitHub Sync:</span>
+ <span id="summary-github" style="font-weight: 600;">Loading...</span>
+ </div>
+ </div>
+ <button class="btn-outline-primary" style="color: var(--danger); border-color: var(--danger); width: 100%; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: 600; margin-top: 20px; cursor: pointer;" onclick="handleLogout()">
+ Sign Out / Log Out
+ </button>
+ </div>
+
+ <!-- Achievements / Milestones Card -->
+ <div class="card" style="padding: 20px;">
+ <h3 class="card-heading" style="margin-bottom: 16px;"> Earned Milestones</h3>
+ <div id="profile-milestones-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 250px; overflow-y: auto; padding-right: 4px;">
+ <p class="empty-state" style="margin: 0; padding: 10px 0; font-size: 0.85rem;">No milestone achievements earned yet.</p>
+ </div>
+ </div>
+ </div>
+ </div>
+ </section>
+ </main>
+ </div>
+
+
+
+ <!-- Error Toast -->
+ <div id="toast" role="alert">
+ <span id="toast-message">Oops! Something went wrong.</span>
+ </div>
+
+ <!-- Floating Brutal Mentor Mode Button & Modal (Optional/Fallback) -->
+ <button id="mentor-mode-btn" title="Brutal AI Mentor" style="display:none;">
+ Brutal Mentor Mode
+ </button>
+ <div id="mentor-modal" style="display: none;">
+ <div>
+ <button id="mentor-modal-close" style="position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">×</button>
+ <h2 style="color:#f97316; margin-bottom:6px;"> Brutal Mentor Mode</h2>
+ <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">
+ Get unfiltered, harsh, career-changing advice from your AI mentor.
+ </p>
+ <label class="input-label">Your Career Goal</label>
+ <input id="mentor-goal" type="text" placeholder="e.g. Backend Engineer at Google" class="skill-input" style="width:100%; padding:12px; margin:8px 0 16px; box-sizing:border-box;" />
+ <label class="input-label">Your Current Skills (comma-separated)</label>
+ <input id="mentor-skills" type="text" placeholder="e.g. React, HTML, CSS, JavaScript" class="skill-input" style="width:100%; padding:12px; margin:8px 0 20px; box-sizing:border-box;" />
+ <button id="mentor-submit-btn" class="cta-button" style="width:100%; padding:14px; background: linear-gradient(135deg,#f97316,#dc2626); color:white; font-size:1rem; font-weight:700; cursor:pointer;">Get Brutal Advice </button>
+ <div id="mentor-result" style="margin-top:20px;"></div>
+ </div>
+ </div>
+
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+ <script>
+ // Injecting ENV for Supabase
+ window.ENV = {
+ SUPABASE_URL: 'https://plighgmhjeuyxrsjryvc.supabase.co',
+ SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsaWdoZ21oamV1eXhyc2pyeXZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMDkyODksImV4cCI6MjA5OTg4NTI4OX0.0PBV65i4Ki9kWj4AjQ-FlJ0VC1z1H0JZUzdvgtPjlYQ'
+ };
+ </script>
+ <script src="/static/js/supabaseClient.js" charset="UTF-8"></script>
+ <script src="/static/js/app.js" charset="UTF-8"></script>
+ <script>
+ async function handleLogout() {
+ // Step 1: Sign out from Supabase globally (invalidates server-side session too)
+ if (window.supabaseClient) {
+ try {
+ await window.supabaseClient.auth.signOut({ scope: 'global' });
+ } catch (e) {
+ console.warn("Supabase signOut error (continuing logout):", e);
+ }
+ }
+
+ // Step 2: Wipe all Supabase-related keys from localStorage
+ Object.keys(localStorage).forEach(key => {
+ if (key.startsWith('sb-') || key.startsWith('supabase') || key.startsWith('profile_')) {
+ localStorage.removeItem(key);
+ }
+ });
+
+ // Step 3: Wipe all sessionStorage keys
+ sessionStorage.clear();
+
+ // Step 4: Clear all cookies for this domain
+ document.cookie.split(";").forEach(cookie => {
+ const eqPos = cookie.indexOf("=");
+ const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+ document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+ });
+
+ // Step 5: Hard redirect — replace history entry so back button can't return
+ window.location.replace('/');
+ }
+ </script>
 </body>
 </html>
 
