@@ -2352,42 +2352,91 @@ def get_interview_history():
 
 
 JOBS_CACHE = {}
-JOBS_CACHE_EXPIRY = 600  # 10 minutes cache lifespan
+JOBS_CACHE_EXPIRY = 600  # 10 minutes in-memory cache (local only)
 
 @app.route("/api/jobs", methods=["GET"])
 @token_required
 def get_jobs():
+    import time
+
     query = request.args.get("query", "Software Engineer").strip().lower()
-    page = request.args.get("page", "1")
-    
-    # Check cache first
+    page  = request.args.get("page", "1")
+
+    # ── In-memory cache (works locally, resets per cold start on Vercel) ──
     cache_key = f"{query}_{page}"
     if cache_key in JOBS_CACHE:
-        timestamp, cached_data = JOBS_CACHE[cache_key]
-        import time
-        if time.time() - timestamp < JOBS_CACHE_EXPIRY:
-            print(f"[JOBS] Cache HIT for query '{query}' (page {page})")
+        ts, cached_data = JOBS_CACHE[cache_key]
+        if time.time() - ts < JOBS_CACHE_EXPIRY:
+            print(f"[JOBS] Cache HIT (memory) for query '{query}' page {page}")
             return jsonify(cached_data)
-            
+
+    # ── Supabase cache (persists across serverless cold starts on Vercel) ──
+    sb = get_sb()
+    if sb:
+        try:
+            cached = sb.table("jobs_cache")\
+                       .select("data, created_at")\
+                       .eq("cache_key", cache_key)\
+                       .order("created_at", desc=True)\
+                       .limit(1)\
+                       .execute()
+            if cached.data:
+                import datetime
+                created = cached.data[0]["created_at"]
+                # Parse ISO timestamp
+                try:
+                    created_dt = datetime.datetime.fromisoformat(created.replace("Z", "+00:00"))
+                    age = (datetime.datetime.now(datetime.timezone.utc) - created_dt).total_seconds()
+                    if age < JOBS_CACHE_EXPIRY:
+                        print(f"[JOBS] Cache HIT (Supabase) for query '{query}' page {page}")
+                        resp_data = cached.data[0]["data"]
+                        JOBS_CACHE[cache_key] = (time.time(), resp_data)
+                        return jsonify(resp_data)
+                except Exception:
+                    pass
+        except Exception as db_err:
+            print(f"[JOBS] Supabase cache read skipped: {db_err}")
+
+    # ── Live fetch from RapidAPI JSearch ──
+    api_key = os.getenv("RAPIDAPI_KEY", "").strip()
+    if not api_key:
+        return jsonify({"error": "RAPIDAPI_KEY is not configured on the server."}), 500
+
     url = "https://jsearch.p.rapidapi.com/search-v2"
     headers = {
-        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY", "f64a9f413emsh9ec9731173c93f4p11a020jsn1bc1252068e5"),
+        "x-rapidapi-key": api_key,
         "x-rapidapi-host": "jsearch.p.rapidapi.com"
     }
-    querystring = {"query": query, "page": page, "num_pages": "1"}
-    
+    params = {"query": query, "page": page, "num_pages": "1"}
+
     try:
-        response = requests.get(url, headers=headers, params=querystring, timeout=30)
+        response = requests.get(url, headers=headers, params=params, timeout=30)
         if response.status_code == 200:
             resp_data = response.json()
-            # Store in cache
-            import time
+
+            # Store in memory cache
             JOBS_CACHE[cache_key] = (time.time(), resp_data)
-            print(f"[JOBS] Cache MISS for query '{query}', data cached successfully.")
+
+            # Store in Supabase cache for serverless persistence
+            if sb:
+                try:
+                    sb.table("jobs_cache").insert({
+                        "cache_key": cache_key,
+                        "data": resp_data
+                    }).execute()
+                except Exception as db_err:
+                    print(f"[JOBS] Supabase cache write skipped: {db_err}")
+
+            print(f"[JOBS] Live fetch SUCCESS for query '{query}' page {page}")
             return jsonify(resp_data)
+
         else:
-            print(f"[JOBS] API error status {response.status_code}: {response.text}")
-            return jsonify({"error": f"Failed to fetch jobs: status {response.status_code}"}), response.status_code
+            msg = f"RapidAPI returned status {response.status_code}: {response.text[:200]}"
+            print(f"[JOBS] API error: {msg}")
+            return jsonify({"error": msg}), response.status_code
+
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Jobs API timed out. Please try again."}), 504
     except Exception as e:
         print(f"[JOBS] Request exception: {e}")
         return jsonify({"error": str(e)}), 500
