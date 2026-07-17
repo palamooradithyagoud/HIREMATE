@@ -3,9 +3,9 @@ import re
 import time
 import logging
 
-logger = logging.getLogger("JobApplicationAgent.Submitter")
+logger = logging.getLogger("JobApplicationAgent.SubmitHandler")
 
-class Submitter:
+class SubmitHandler:
     @staticmethod
     async def click_submit(page) -> tuple[bool, str, str]:
         """
@@ -23,9 +23,8 @@ class Submitter:
             await submit_btn.click()
             await page.wait_for_timeout(5000)
             
-            # Look for common success identifiers or confirmation numbers
             page_text = await page.evaluate("() => document.body.innerText")
-            conf_num = Submitter._extract_confirmation(page_text)
+            conf_num = SubmitHandler._extract_confirmation(page_text)
             
             # Take screenshot of the success screen
             screenshot_dir = r"c:\PROJECTS\SKILL PATH\AI-CATALYST-main\AI-CATALYST-main\static\screenshots"

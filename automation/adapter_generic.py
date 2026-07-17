@@ -1,7 +1,7 @@
 import logging
-from automation.detect_fields import FieldDetector
-from automation.fill_fields import FieldFiller
-from automation.upload_files import FileUploader
+from automation.field_detector import FieldDetector
+from automation.form_filler import FormFiller
+from automation.file_uploader import FileUploader
 
 logger = logging.getLogger("JobApplicationAgent.Adapter.Generic")
 

@@ -1,7 +1,7 @@
 import logging
 from playwright.async_api import async_playwright, Browser, BrowserContext
 
-logger = logging.getLogger("JobApplicationAgent.Browser")
+logger = logging.getLogger("JobApplicationAgent.BrowserManager")
 
 class BrowserManager:
     @staticmethod

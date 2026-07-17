@@ -1,16 +1,15 @@
 import logging
 
-logger = logging.getLogger("JobApplicationAgent.FieldFiller")
+logger = logging.getLogger("JobApplicationAgent.FormFiller")
 
-class FieldFiller:
+class FormFiller:
     @staticmethod
-    async def fill(page, field_id: str, value: str):
+    async def fill(page, field_id: str, value: str) -> bool:
         """
         Locates the field by ID and inputs the value (handles textbox, select dropdowns, and textarea).
         """
         element = await page.query_selector(f"#{field_id}")
         if not element:
-            # Fallback to query by name
             element = await page.query_selector(f"[name='{field_id}']")
             
         if not element:
@@ -22,14 +21,11 @@ class FieldFiller:
         
         try:
             if tag_name == "select":
-                # Handle dropdown selection
                 await element.select_option(value=value)
             elif el_type in ["checkbox", "radio"]:
-                # Checked state
                 if value.lower() in ["true", "yes", "1", "on"]:
                     await element.check()
             else:
-                # Text input or textarea
                 await element.focus()
                 await element.fill(value)
             return True

@@ -46,13 +46,17 @@ class FieldDetector:
                 
             label_text = (label_text or "").strip()
             
+            # Get current value
+            current_value = await element.evaluate("el => el.value or ''")
+            
             fields.append({
                 "id": el_id or f"field_{idx}",
                 "name": name,
                 "label": label_text,
                 "type": el_type if tag_name == "input" else tag_name,
                 "required": required,
-                "placeholder": placeholder
+                "placeholder": placeholder,
+                "current_value": current_value
             })
             
         logger.info(f"Found {len(fields)} interactive form fields.")

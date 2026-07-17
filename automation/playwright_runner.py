@@ -3,16 +3,19 @@ import json
 import time
 import logging
 import asyncio
-from automation.browser import BrowserManager
+from automation.browser_manager import BrowserManager
 from automation.login_detector import LoginDetector
 from automation.website_detector import WebsiteDetector
 from automation.adapter_generic import GenericWebsiteAdapter
 from automation.adapter_greenhouse import GreenhouseWebsiteAdapter
 from automation.adapter_lever import LeverWebsiteAdapter
 from automation.adapter_workday import WorkdayWebsiteAdapter
-from automation.upload_files import FileUploader
-from automation.submit_application import Submitter
-from automation.detect_fields import FieldDetector
+from automation.field_detector import FieldDetector
+from automation.form_filler import FormFiller
+from automation.file_uploader import FileUploader
+from automation.question_handler import QuestionHandler
+from automation.preview_generator import PreviewGenerator
+from automation.submit_handler import SubmitHandler
 
 logger = logging.getLogger("JobApplicationAgent.PlaywrightRunner")
 
@@ -83,7 +86,6 @@ class PlaywrightRunner:
             adapter_res = await adapter.fill_form(page, profile_data, essay_answers)
             
             # 6. Upload Tailored Resume/Cover Letter files
-            # Find any input file elements
             await log("UPLOAD_RESUME", "Scanning form for file upload containers...")
             fields = await FieldDetector.detect_fields(page)
             
@@ -114,18 +116,14 @@ class PlaywrightRunner:
                         await FileUploader.upload(page, field_id, cover_path)
                         adapter_res["filled_fields"].append("Cover Letter PDF")
 
-            # 7. Scan for any essay fields to flag essay answering step
-            has_essay = any("essay" in field["label"].lower() for field in fields)
-            if has_essay:
-                await log("ANSWER_APPLICATION_QUESTIONS", "Answering complex/essay text questions dynamically...")
+            # 7. Scan and fill essay fields using the new QuestionHandler
+            filled_essays = await QuestionHandler.fill_essays(page, essay_answers)
+            if filled_essays:
+                await log("ANSWER_APPLICATION_QUESTIONS", f"Filled essay answers for: {', '.join(filled_essays)}")
 
-            # 8. Capture preview screenshot
+            # 8. Capture preview screenshot using the new PreviewGenerator
             screenshot_dir = os.path.join(base_dir, "static", "screenshots")
-            os.makedirs(screenshot_dir, exist_ok=True)
-            timestamp = int(time.time())
-            preview_screenshot = f"preview_{timestamp}.png"
-            preview_path = os.path.join(screenshot_dir, preview_screenshot)
-            await page.screenshot(path=preview_path)
+            preview_url = await PreviewGenerator.generate_preview(page, screenshot_dir)
             
             # Check for captcha warning
             captcha_detected = False
@@ -136,7 +134,7 @@ class PlaywrightRunner:
             preview_data = {
                 "filled_fields": adapter_res["filled_fields"],
                 "unfilled_fields": adapter_res["unfilled_fields"],
-                "screenshot": f"/static/screenshots/{preview_screenshot}",
+                "screenshot": preview_url,
                 "captcha_detected": captcha_detected
             }
             
@@ -150,9 +148,9 @@ class PlaywrightRunner:
             except asyncio.TimeoutError:
                 raise TimeoutError("Application confirmation timed out.")
                 
-            # 11. Final Submission Click
+            # 11. Final Submission Click using the new SubmitHandler
             await log("SUBMIT_APPLICATION", "Resuming Playwright pipeline to click submit...")
-            success, conf_num, success_screenshot = await Submitter.click_submit(page)
+            success, conf_num, success_screenshot = await SubmitHandler.click_submit(page)
             
             if not success:
                 raise ValueError("Could not complete final form submission click automatically.")
