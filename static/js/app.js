@@ -3403,6 +3403,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const role = interviewRoleInput.value.trim();
             const company = interviewBenchmarkSelect.value === "FAANG" ? "Google" : "Amazon";
             const expLevel = "Mid-Level";
+            const interviewType = interviewTypeSelect ? interviewTypeSelect.value : "Coding & DSA";
 
             if (!role) {
                 showToast("Please enter your target role.");
@@ -3417,7 +3418,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await authFetch('/api/interview/start', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ company, role, experience_level: expLevel })
+                    body: JSON.stringify({ company, role, experience_level: expLevel, interview_type: interviewType })
                 });
 
                 if (!res.ok) throw new Error("Failed start request");

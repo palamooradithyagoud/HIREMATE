@@ -3,6 +3,7 @@ import time
 import base64
 import requests
 import logging
+import re
 
 logger = logging.getLogger("VoiceMockInterview.TextToSpeech")
 
@@ -13,6 +14,11 @@ class TextToSpeech:
         Synthesizes text into an audio file using Sarvam AI.
         Falls back to gTTS if SARVAM_API_KEY is not configured.
         """
+        # Clean text of markdown formatters or labels for a natural voice output
+        clean_text = re.sub(r'[*#_`]', '', text)
+        clean_text = re.sub(r'^(Alex|Interviewer|Recruiter|Model)\s*(?:-\s*\w+)?\s*:\s*', '', clean_text, flags=re.IGNORECASE)
+        clean_text = clean_text.strip()
+
         sarvam_key = os.environ.get("SARVAM_API_KEY")
         base_dir = r"c:\PROJECTS\SKILL PATH\AI-CATALYST-main\AI-CATALYST-main"
         audio_dir = os.path.join(base_dir, "static", "audio")
@@ -23,14 +29,14 @@ class TextToSpeech:
 
         if sarvam_key:
             try:
-                logger.info(f"Synthesizing text via Sarvam AI TTS: '{text[:60]}...'")
+                logger.info(f"Synthesizing text via Sarvam AI TTS: '{clean_text[:60]}...'")
                 url = "https://api.sarvam.ai/text-to-speech"
                 headers = {
                     "api-subscription-key": sarvam_key,
                     "Content-Type": "application/json"
                 }
                 payload = {
-                    "text": text,
+                    "text": clean_text,
                     "speaker": "meera",
                     "target_language_code": "en-IN"
                 }
@@ -50,12 +56,12 @@ class TextToSpeech:
                 logger.warning(f"Sarvam AI TTS returned code {response.status_code}: {response.text}")
             except Exception as e:
                 logger.error(f"Error during Sarvam AI Text-to-Speech synthesis: {e}")
-
+ 
         # Fallback to gTTS
         try:
-            logger.info(f"Using gTTS fallback for text: '{text[:60]}...'")
+            logger.info(f"Using gTTS fallback for text: '{clean_text[:60]}...'")
             from gtts import gTTS
-            tts = gTTS(text=text, lang='en', tld='co.uk')
+            tts = gTTS(text=clean_text, lang='en', tld='co.uk')
             tts.save(filepath)
             return f"/static/audio/{filename}"
         except Exception as e:

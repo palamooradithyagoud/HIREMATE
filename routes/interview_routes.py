@@ -23,6 +23,7 @@ def interview_start():
         company = data.get("company", "Company")
         role = data.get("role", "Software Engineer")
         exp_level = data.get("experience_level", "Mid")
+        interview_type = data.get("interview_type", "Coding & DSA")
         
         user_id = g.user_id
         sb = get_sb()
@@ -35,7 +36,7 @@ def interview_start():
             profile = res.data[0] if res.data else {}
 
             agent = InterviewAgent()
-            greeting_text = agent.initialize_interview(company, role, exp_level, profile)
+            greeting_text = agent.initialize_interview(company, role, exp_level, profile, interview_type)
             
             # Save active agent to memory
             ACTIVE_INTERVIEWS[user_id] = {
@@ -43,7 +44,8 @@ def interview_start():
                 "company": company,
                 "role": role,
                 "experience_level": exp_level,
-                "profile": profile
+                "profile": profile,
+                "interview_type": interview_type
             }
             
             # Synthesize text speech audio
