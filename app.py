@@ -2425,6 +2425,41 @@ def get_interview_history():
 JOBS_CACHE = {}
 JOBS_CACHE_EXPIRY = 600  # 10 minutes in-memory cache (local only)
 
+def inject_match_metrics(resp_data, user_id):
+    # Fetch user skills
+    sb = get_sb()
+    user_skills = []
+    if sb:
+        try:
+            res = sb.table("profiles").select("skills").eq("id", user_id).limit(1).execute()
+            if res.data and res.data[0].get("skills"):
+                skills_str = res.data[0]["skills"]
+                user_skills = [s.strip() for s in skills_str.split(",") if s.strip()]
+        except Exception as e:
+            print(f"[JOBS] Error fetching user skills: {e}")
+            
+    from services.smart_apply_service import SmartApplyService
+    
+    # Standardize data format
+    jobs_list = []
+    if isinstance(resp_data, dict):
+        jobs_list = resp_data.get("data", [])
+        if isinstance(jobs_list, dict):
+            jobs_list = jobs_list.get("jobs", [])
+    elif isinstance(resp_data, list):
+        jobs_list = resp_data
+        
+    for job in jobs_list:
+        if isinstance(job, dict):
+            desc = job.get("job_description", "") or ""
+            title = job.get("job_title", "") or ""
+            metrics = SmartApplyService.calculate_match_score(user_skills, title + " " + desc)
+            job["match_score"] = metrics["match_score"]
+            job["skills_match"] = metrics["skills_match"]
+            job["missing_skills"] = metrics["missing_skills"]
+            
+    return resp_data
+
 @app.route("/api/jobs", methods=["GET"])
 @token_required
 def get_jobs():
@@ -2439,7 +2474,7 @@ def get_jobs():
         ts, cached_data = JOBS_CACHE[cache_key]
         if time.time() - ts < JOBS_CACHE_EXPIRY:
             print(f"[JOBS] Cache HIT (memory) for query '{query}' page {page}")
-            return jsonify(cached_data)
+            return jsonify(inject_match_metrics(cached_data, g.user_id))
 
     # ── Supabase cache (persists across serverless cold starts on Vercel) ──
     sb = get_sb()
@@ -2462,7 +2497,7 @@ def get_jobs():
                         print(f"[JOBS] Cache HIT (Supabase) for query '{query}' page {page}")
                         resp_data = cached.data[0]["data"]
                         JOBS_CACHE[cache_key] = (time.time(), resp_data)
-                        return jsonify(resp_data)
+                        return jsonify(inject_match_metrics(resp_data, g.user_id))
                 except Exception:
                     pass
         except Exception as db_err:
@@ -2499,7 +2534,7 @@ def get_jobs():
                     print(f"[JOBS] Supabase cache write skipped: {db_err}")
 
             print(f"[JOBS] Live fetch SUCCESS for query '{query}' page {page}")
-            return jsonify(resp_data)
+            return jsonify(inject_match_metrics(resp_data, g.user_id))
 
         else:
             msg = f"RapidAPI returned status {response.status_code}: {response.text[:200]}"
@@ -2528,6 +2563,10 @@ def run_async(coro):
 # Register Enterprise AI Voice Mock Interview Blueprint
 from routes.interview_routes import interview_routes_bp
 app.register_blueprint(interview_routes_bp)
+
+# Register Smart Job Apply Blueprint
+from routes.smart_apply_routes import smart_apply_routes_bp
+app.register_blueprint(smart_apply_routes_bp)
 
 @app.route("/")
 def index():

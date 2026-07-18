@@ -2720,10 +2720,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     location: loc,
                     type: jobType,
                     salary: salary,
-                    matchScore: matchScore,
+                    matchScore: job.match_score || matchScore,
+                    skills_match: job.skills_match || [],
+                    missing_skills: job.missing_skills || [],
                     tags: tags,
                     description: job.job_description ? job.job_description.substring(0, 180) + "..." : "No description provided.",
-                    applyLink: job.job_apply_link
+                    applyLink: job.job_apply_link,
+                    fullDescription: job.job_description || ""
                 };
             });
 
@@ -2804,6 +2807,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="${badgeClass}"> ${job.matchScore}% Match</span>
                     </div>
                     <p class="job-desc">${job.description}</p>
+                    
+                    <!-- Dynamic Skills match display -->
+                    <div style="margin-top: 10px; font-size: 0.8rem; line-height: 1.4; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-bottom: 12px;">
+                        <div><span style="color:#10b981; font-weight:600;">✔ Skills Match:</span> <span style="color:var(--text-muted);">${job.skills_match && job.skills_match.length > 0 ? job.skills_match.join(', ') : 'None'}</span></div>
+                        <div><span style="color:#ef4444; font-weight:600;">✘ Missing:</span> <span style="color:var(--text-muted);">${job.missing_skills && job.missing_skills.length > 0 ? job.missing_skills.join(', ') : 'None'}</span></div>
+                    </div>
+
                     <div class="job-tags">
                         ${job.tags.map(t => `<span class="job-tag">${t}</span>`).join('')}
                     </div>
@@ -2817,8 +2827,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn-job-save ${isSaved ? 'saved' : ''}" onclick="window.toggleSaveJob('${job.id}', this)" title="${isSaved ? 'Unsave Job' : 'Save Job'}" style="flex-shrink:0;">
                             
                         </button>
-                        <button class="btn-job-apply" onclick="window.applyToJob('${job.applyLink ? job.applyLink.replace(/'/g, "\\'") : '#'}')" style="padding: 6px 12px; font-size: 0.8rem;">
+                        <button class="btn-job-apply" onclick="window.applyToJob('${job.applyLink ? job.applyLink.replace(/'/g, "\\'") : '#'}')" style="padding: 6px 12px; font-size: 0.8rem; background: transparent; border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer;">
                             Apply Direct
+                        </button>
+                        <button class="btn-job-apply" onclick="window.initiateSmartApply('${job.id}')" style="padding: 6px 12px; font-size: 0.8rem; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                            Smart Apply
                         </button>
                     </div>
                 </div>
@@ -2889,6 +2902,9 @@ document.addEventListener('DOMContentLoaded', () => {
             loadInterviewHistory();
             initInterviewInputs();
             showStage('setup');
+        } else if (targetViewId === 'view-applications') {
+            window.loadJobApplicationsTracker();
+            window.loadUserDocuments();
         }
     };
 
@@ -4355,7 +4371,594 @@ document.addEventListener('DOMContentLoaded', () => {
     // Expose trackClick globally for inline onclick handlers
     window.trackClickGlobal = (url, title) => trackClick(url, title, 'click');
 
+    // ──────────────────────────────────────────────
+    // Smart Apply Frontend Implementation
+    // ──────────────────────────────────────────────
+    let activeAutomationJob = null;
+    let automationPollInterval = null;
+    let activeTaskId = null;
+    let allUserResumes = [];
+    let allUserCoverLetters = [];
 
+
+    window.initiateSmartApply = async (jobId) => {
+        const job = currentJobsList.find(j => j.id === jobId);
+        if (!job) {
+            showToast('❌ Job details not found');
+            return;
+        }
+
+        activeAutomationJob = job;
+        
+        // Show modal and switch to analyze step
+        const modal = document.getElementById('smart-apply-modal');
+        modal.style.display = 'flex';
+        document.getElementById('smart-apply-step-analyze').style.display = 'block';
+        document.getElementById('smart-apply-step-setup').style.display = 'none';
+        document.getElementById('smart-apply-step-automation').style.display = 'none';
+        document.getElementById('smart-apply-step-review').style.display = 'none';
+
+        // Load job headers
+        document.getElementById('smart-apply-title').textContent = job.title;
+        document.getElementById('smart-apply-company').textContent = `${job.company} • ${job.location}`;
+        document.getElementById('smart-apply-match-badge').textContent = `${job.matchScore}% Match`;
+        document.getElementById('smart-apply-match-badge').className = job.matchScore >= 90 ? 'job-match-badge high-match' : 'job-match-badge';
+
+        try {
+            // Load user resumes first
+            const resResp = await authFetch('/api/apply/resumes');
+            if (resResp.ok) {
+                allUserResumes = await resResp.json();
+            }
+
+            // Call deep analyze
+            const analyzeResp = await authFetch('/api/apply/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    job_description: job.fullDescription || job.description,
+                    job_url: job.applyLink
+                })
+            });
+
+            if (!analyzeResp.ok) throw new Error('Failed to run AI deep analysis');
+            const analysis = await analyzeResp.json();
+
+            // Populate resumes select
+            const select = document.getElementById('smart-apply-resume-select');
+            select.innerHTML = allUserResumes.map(r => 
+                `<option value="${r.resume_url}">${escapeHTML(r.name)} (ATS: ${r.ats_score}%)</option>`
+            ).join('') || '<option value="">No Resumes Saved - Please add one</option>';
+
+            // Set recommended fields
+            document.getElementById('smart-apply-recommended-resume').textContent = analysis.recommended_resume || 'None';
+            document.getElementById('smart-apply-cover-letter-editor').value = analysis.cover_letter || '';
+            
+            // Build ATS list
+            const atsList = document.getElementById('smart-apply-ats-checklist');
+            atsList.innerHTML = (analysis.ats_keywords || []).map(kw => 
+                `<li>Add keyword: <strong style="color:var(--primary);">${escapeHTML(kw)}</strong></li>`
+            ).join('') || '<li>Skills layout complies with target requirements.</li>';
+
+            if (analysis.missing_skills_analysis) {
+                atsList.innerHTML += `<li style="margin-top:6px; color:rgba(239,68,68,0.9); list-style-type:none;">⚠️ ${escapeHTML(analysis.missing_skills_analysis)}</li>`;
+            }
+
+            // Switch to setup view
+            document.getElementById('smart-apply-step-analyze').style.display = 'none';
+            document.getElementById('smart-apply-step-setup').style.display = 'block';
+
+        } catch (e) {
+            console.error(e);
+            showToast('⚠️ Deep analysis failed. Loading manual setup...');
+            
+            // Fallback setup
+            const select = document.getElementById('smart-apply-resume-select');
+            select.innerHTML = allUserResumes.map(r => 
+                `<option value="${r.resume_url}">${escapeHTML(r.name)}</option>`
+            ).join('') || '<option value="">No Resumes Saved</option>';
+            document.getElementById('smart-apply-cover-letter-editor').value = `Dear Hiring Manager,\n\nI am writing to apply for the ${job.title} role at ${job.company}.\n\nSincerely,\nCandidate`;
+            document.getElementById('smart-apply-ats-checklist').innerHTML = '<li>Check skills match on dashboard.</li>';
+            
+            document.getElementById('smart-apply-step-analyze').style.display = 'none';
+            document.getElementById('smart-apply-step-setup').style.display = 'block';
+        }
+    };
+
+    window.closeSmartApplyModal = () => {
+        document.getElementById('smart-apply-modal').style.display = 'none';
+        if (automationPollInterval) {
+            clearInterval(automationPollInterval);
+            automationPollInterval = null;
+        }
+        activeTaskId = null;
+        activeAutomationJob = null;
+    };
+
+    window.startAutofillAutomation = async () => {
+        if (!activeAutomationJob) return;
+        
+        const resumeSelect = document.getElementById('smart-apply-resume-select');
+        const selectedOpt = resumeSelect.options[resumeSelect.selectedIndex];
+        const resumeUrl = resumeSelect.value;
+        const resumeName = selectedOpt ? selectedOpt.text : 'Default Resume';
+        const coverLetter = document.getElementById('smart-apply-cover-letter-editor').value;
+
+        document.getElementById('smart-apply-step-setup').style.display = 'none';
+        document.getElementById('smart-apply-step-automation').style.display = 'block';
+        
+        const logConsole = document.getElementById('automation-log-console');
+        logConsole.innerHTML = '<div style="color:var(--primary);">[SYSTEM] Submitting task to automation coordinator...</div>';
+
+        try {
+            const resp = await authFetch('/api/apply/start-automation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    job_url: activeAutomationJob.applyLink,
+                    resume_url: resumeUrl,
+                    resume_name: resumeName,
+                    cover_letter_text: coverLetter,
+                    company: activeAutomationJob.company,
+                    role: activeAutomationJob.title
+                })
+            });
+
+            if (!resp.ok) throw new Error('Could not schedule job apply task');
+            const task = await resp.json();
+            activeTaskId = task.task_id;
+
+            // Start polling progress
+            automationPollInterval = setInterval(pollAutomationProgress, 1500);
+
+        } catch (e) {
+            logConsole.innerHTML += `<div style="color:#ef4444;">[ERROR] Task init failed: ${escapeHTML(e.message)}</div>`;
+        }
+    };
+
+    const pollAutomationProgress = async () => {
+        if (!activeTaskId) return;
+
+        try {
+            const resp = await authFetch(`/api/apply/status/${activeTaskId}`);
+            if (!resp.ok) throw new Error('Status poll failed');
+            const data = await resp.json();
+
+            // Render logs
+            const logConsole = document.getElementById('automation-log-console');
+            logConsole.innerHTML = data.logs.map(log => {
+                const date = new Date(log.timestamp * 1000).toLocaleTimeString();
+                return `<div><span style="color:var(--text-muted); font-size:0.75rem;">[${date}]</span> ${escapeHTML(log.message)}</div>`;
+            }).join('');
+            
+            // Auto scroll console
+            logConsole.scrollTop = logConsole.scrollHeight;
+
+            // Check status and update panels
+            const banner = document.getElementById('automation-pause-banner');
+            if (data.status === 'PAUSED_LOGIN') {
+                banner.style.display = 'flex';
+                document.getElementById('pause-banner-title').textContent = 'Authentication Required';
+                document.getElementById('pause-banner-desc').textContent = 'Form requires log in. Please log in manually inside the popup browser window.';
+            } else if (data.status === 'PAUSED_CAPTCHA') {
+                banner.style.display = 'flex';
+                document.getElementById('pause-banner-title').textContent = 'Security Challenge (CAPTCHA)';
+                document.getElementById('pause-banner-desc').textContent = 'Please complete the verification checks / CAPTCHA inside the popup browser window.';
+            } else {
+                banner.style.display = 'none';
+            }
+
+            // Check if ready for review
+            if (data.status === 'Waiting for review...') {
+                clearInterval(automationPollInterval);
+                automationPollInterval = null;
+                renderApplicationReview(data.preview);
+            } else if (data.status === 'Submitted successfully') {
+                clearInterval(automationPollInterval);
+                automationPollInterval = null;
+                showToast('🚀 Job application submitted successfully!');
+                window.closeSmartApplyModal();
+                window.loadJobApplicationsTracker();
+            } else if (data.status.startsWith('Failed') || data.status === 'Cancelled') {
+                clearInterval(automationPollInterval);
+                automationPollInterval = null;
+                showToast('❌ Application autofill failed or was cancelled');
+            }
+
+        } catch (e) {
+            console.error('Polling error:', e);
+        }
+    };
+
+    window.resumeAutomationAfterBlock = async () => {
+        if (!activeTaskId) return;
+        try {
+            await authFetch('/api/apply/resume-automation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: activeTaskId, action: 'continue' })
+            });
+            document.getElementById('automation-pause-banner').style.display = 'none';
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    window.cancelAutomationTask = async () => {
+        if (!activeTaskId) {
+            window.closeSmartApplyModal();
+            return;
+        }
+        try {
+            await authFetch('/api/apply/confirm-submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: activeTaskId, action: 'cancel' })
+            });
+        } catch (e) {
+            console.error(e);
+        }
+        window.closeSmartApplyModal();
+    };
+
+    const renderApplicationReview = (preview) => {
+        document.getElementById('smart-apply-step-automation').style.display = 'none';
+        document.getElementById('smart-apply-step-review').style.display = 'block';
+
+        const fieldsList = document.getElementById('review-fields-list');
+        fieldsList.innerHTML = '';
+
+        if (!preview || !preview.fields || preview.fields.length === 0) {
+            fieldsList.innerHTML = '<p style="color:var(--text-muted); font-size:0.9rem;">No custom form inputs mapped.</p>';
+            return;
+        }
+
+        preview.fields.forEach((f, idx) => {
+            const card = document.createElement('div');
+            card.className = 'dsa-card';
+            card.style.padding = '12px';
+            card.style.background = 'rgba(255,255,255,0.02)';
+            card.style.border = '1px solid var(--border-color)';
+            card.style.borderRadius = '6px';
+            
+            // Allow editing of the mapped value inline
+            card.innerHTML = `
+                <div style="font-size:0.85rem; font-weight:600; color:var(--text-main); margin-bottom:6px;">${escapeHTML(f.label || f.name || 'Field')}</div>
+                <input type="text" class="smart-review-input skill-input" data-smart-id="${f.smart_id}" value="${escapeHTML(f.value || '')}" style="width:100%; padding:8px; border-radius:6px; box-sizing:border-box; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main);">
+            `;
+            fieldsList.appendChild(card);
+        });
+    };
+
+    window.confirmSubmitApplication = async () => {
+        if (!activeTaskId) return;
+
+        // Gather all edited input values
+        const editedFields = [];
+        const inputs = document.querySelectorAll('.smart-review-input');
+        inputs.forEach(inp => {
+            editedFields.push({
+                smart_id: inp.getAttribute('data-smart-id'),
+                value: inp.value
+            });
+        });
+
+        try {
+            const resp = await authFetch('/api/apply/confirm-submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    task_id: activeTaskId,
+                    action: 'submit',
+                    fields: editedFields
+                })
+            });
+
+            if (!resp.ok) throw new Error('Failed to confirm submit');
+            showToast('🚀 Finalizing submission in Playwright...');
+            
+            // Resume progress polling to await final Playwright status result
+            automationPollInterval = setInterval(pollAutomationProgress, 1500);
+            
+            // Return back to log console execution progress view
+            document.getElementById('smart-apply-step-review').style.display = 'none';
+            document.getElementById('smart-apply-step-automation').style.display = 'block';
+
+        } catch (e) {
+            showToast('❌ Submission approval failed');
+        }
+    };
+
+    // ──────────────────────────────────────────────
+    // Document Management (Resumes / Cover Letters)
+    // ──────────────────────────────────────────────
+    window.loadUserDocuments = async () => {
+        const resumesContainer = document.getElementById('resumes-list');
+        resumesContainer.innerHTML = '<div class="spinner" style="width:20px; height:20px; margin: 10px auto;"></div>';
+
+        const lettersContainer = document.getElementById('cover-letters-list');
+        lettersContainer.innerHTML = '<div class="spinner" style="width:20px; height:20px; margin: 10px auto;"></div>';
+
+        try {
+            // Fetch resumes
+            const resResp = await authFetch('/api/apply/resumes');
+            if (resResp.ok) {
+                allUserResumes = await resResp.json();
+                resumesContainer.innerHTML = allUserResumes.map(r => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
+                        <div>
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--text-main);">${escapeHTML(r.name)}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">ATS Match: <span style="color:#10b981;">${r.ats_score}%</span></div>
+                        </div>
+                        <button onclick="window.deleteResumeVersion('${r.id}')" style="background:none; border:none; color:#ef4444; font-size:0.9rem; cursor:pointer;">Delete</button>
+                    </div>
+                `).join('') || '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center;">No resumes saved.</div>';
+            }
+
+            // Fetch cover letters
+            const clResp = await authFetch('/api/apply/cover-letters');
+            if (clResp.ok) {
+                allUserCoverLetters = await clResp.json();
+                lettersContainer.innerHTML = allUserCoverLetters.map(c => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
+                        <div>
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--text-main);">${escapeHTML(c.name)}</div>
+                        </div>
+                        <button onclick="window.deleteCoverLetterTemplate('${c.id}')" style="background:none; border:none; color:#ef4444; font-size:0.9rem; cursor:pointer;">Delete</button>
+                    </div>
+                `).join('') || '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center;">No templates saved.</div>';
+            }
+        } catch (e) {
+            console.error('Documents load failed:', e);
+        }
+    };
+
+    window.showAddResumeModal = () => {
+        document.getElementById('add-resume-modal').style.display = 'flex';
+        document.getElementById('add-resume-name').value = '';
+        document.getElementById('add-resume-url').value = '';
+        document.getElementById('add-resume-ats').value = '85';
+    };
+
+    window.closeAddResumeModal = () => {
+        document.getElementById('add-resume-modal').style.display = 'none';
+    };
+
+    window.saveResumeVersion = async () => {
+        const name = document.getElementById('add-resume-name').value.trim();
+        const url = document.getElementById('add-resume-url').value.trim();
+        const ats = parseInt(document.getElementById('add-resume-ats').value) || 0;
+
+        if (!name || !url) {
+            showToast('⚠️ Please fill out all fields');
+            return;
+        }
+
+        try {
+            const resp = await authFetch('/api/apply/resumes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, resume_url: url, ats_score: ats })
+            });
+
+            if (!resp.ok) throw new Error('Save failed');
+            showToast('✅ Resume version added successfully');
+            window.closeAddResumeModal();
+            window.loadUserDocuments();
+        } catch (e) {
+            showToast('❌ Failed to add resume version');
+        }
+    };
+
+    window.deleteResumeVersion = async (id) => {
+        if (!confirm('Are you sure you want to delete this resume version?')) return;
+        try {
+            const resp = await authFetch(`/api/apply/resumes/${id}`, { method: 'DELETE' });
+            if (!resp.ok) throw new Error('Delete failed');
+            showToast('🗑️ Resume version deleted');
+            window.loadUserDocuments();
+        } catch (e) {
+            showToast('❌ Failed to delete resume');
+        }
+    };
+
+    window.showAddCoverLetterModal = () => {
+        document.getElementById('add-cover-letter-modal').style.display = 'flex';
+        document.getElementById('add-cover-letter-name').value = '';
+        document.getElementById('add-cover-letter-content').value = '';
+    };
+
+    window.closeAddCoverLetterModal = () => {
+        document.getElementById('add-cover-letter-modal').style.display = 'none';
+    };
+
+    window.saveCoverLetterTemplate = async () => {
+        const name = document.getElementById('add-cover-letter-name').value.trim();
+        const content = document.getElementById('add-cover-letter-content').value.trim();
+
+        if (!name || !content) {
+            showToast('⚠️ Please fill out all fields');
+            return;
+        }
+
+        try {
+            const resp = await authFetch('/api/apply/cover-letters', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, content })
+            });
+
+            if (!resp.ok) throw new Error('Save failed');
+            showToast('✅ Cover letter template added successfully');
+            window.closeAddCoverLetterModal();
+            window.loadUserDocuments();
+        } catch (e) {
+            showToast('❌ Failed to add cover letter');
+        }
+    };
+
+    window.deleteCoverLetterTemplate = async (id) => {
+        if (!confirm('Are you sure you want to delete this cover letter template?')) return;
+        try {
+            const resp = await authFetch(`/api/apply/cover-letters/${id}`, { method: 'DELETE' });
+            if (!resp.ok) throw new Error('Delete failed');
+            showToast('🗑️ Cover letter deleted');
+            window.loadUserDocuments();
+        } catch (e) {
+            showToast('❌ Failed to delete cover letter');
+        }
+    };
+
+    // ──────────────────────────────────────────────
+    // Job Application Tracker Dashboard
+    // ──────────────────────────────────────────────
+    let trackedApplications = [];
+
+    window.loadJobApplicationsTracker = async () => {
+        const grid = document.getElementById('apps-list-grid');
+        grid.innerHTML = '<div class="spinner" style="width:40px; height:40px; margin: 40px auto;"></div>';
+
+        try {
+            const resp = await authFetch('/api/apply/list');
+            if (!resp.ok) throw new Error('Failed to fetch tracking list');
+            trackedApplications = await resp.json();
+            
+            // Update stats
+            document.getElementById('total-applied-count').textContent = trackedApplications.length;
+            const interviews = trackedApplications.filter(a => a.status === 'Interview').length;
+            document.getElementById('interview-stage-count').textContent = interviews;
+
+            renderTrackingGrid(trackedApplications);
+            wireTrackingFilters();
+
+        } catch (e) {
+            grid.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">Failed to load tracked applications. ${escapeHTML(e.message)}</div>`;
+        }
+    };
+
+    const renderTrackingGrid = (list) => {
+        const grid = document.getElementById('apps-list-grid');
+        grid.innerHTML = '';
+
+        if (list.length === 0) {
+            grid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted); background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px;">No tracked job applications match these filters.</div>';
+            return;
+        }
+
+        list.forEach(app => {
+            const card = document.createElement('div');
+            card.className = 'job-card';
+            card.style.display = 'flex';
+            card.style.flexDirection = 'column';
+            card.style.gap = '14px';
+            
+            const date = new Date(app.date_applied).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const statusClass = `job-match-badge ${app.status.toLowerCase().replace(' ', '-')}`;
+
+            // Unique CSS class based on status colors
+            let statusColor = '#f97316';
+            if (app.status === 'Applied') statusColor = '#3b82f6';
+            else if (app.status === 'In Review') statusColor = '#a855f7';
+            else if (app.status === 'Interview') statusColor = '#eab308';
+            else if (app.status === 'Assessment') statusColor = '#06b6d4';
+            else if (app.status === 'Offer') statusColor = '#10b981';
+            else if (app.status === 'Rejected') statusColor = '#ef4444';
+
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">${date}</span>
+                        <h3 class="job-title" style="font-size:1.15rem; margin-top:2px;">${escapeHTML(app.role)}</h3>
+                        <div style="font-size:0.9rem; color:var(--primary); font-weight:500; margin-top:2px;">${escapeHTML(app.company)}</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="job-match-badge" style="background: rgba(16, 185, 129, 0.1); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2);">${app.match_score || 85}% Score</span>
+                        <span class="job-match-badge" style="background:${statusColor}22; color:${statusColor}; border:1px solid ${statusColor}44;">${app.status}</span>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.8rem; color:var(--text-muted); border-top:1px solid rgba(255,255,255,0.03); padding-top:10px;">
+                    <div>Resume: <strong style="color:var(--text-main);">${escapeHTML(app.resume_version || 'None')}</strong></div>
+                    <div>Cover Letter: <strong style="color:var(--text-main);">${escapeHTML(app.cover_letter_version || 'None')}</strong></div>
+                    ${app.job_url ? `<div><a href="${app.job_url}" target="_blank" style="color:var(--primary); text-decoration:none;">View Job Portal ↗</a></div>` : ''}
+                </div>
+
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px; font-weight:600;">Status Notes</label>
+                    <textarea onblur="window.saveAppNotes('${app.id}', this.value)" placeholder="Add interview stages, interviewers, codeshare links, or follow-ups..." rows="2" style="width:100%; padding:8px; border-radius:6px; box-sizing:border-box; background:rgba(0,0,0,0.15); border:1px solid var(--border-color); color:var(--text-main); font-family:inherit; resize:vertical; font-size:0.85rem; line-height:1.4;">${escapeHTML(app.notes || '')}</textarea>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid rgba(255,255,255,0.03); padding-top:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:0.8rem; color:var(--text-muted);">Change Status:</span>
+                        <select onchange="window.updateAppStatus('${app.id}', this.value)" style="padding:4px 8px; border-radius:4px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); font-family:inherit; font-size:0.8rem; outline:none;">
+                            <option value="Applied" ${app.status === 'Applied' ? 'selected' : ''}>Applied</option>
+                            <option value="In Review" ${app.status === 'In Review' ? 'selected' : ''}>In Review</option>
+                            <option value="Interview" ${app.status === 'Interview' ? 'selected' : ''}>Interview</option>
+                            <option value="Assessment" ${app.status === 'Assessment' ? 'selected' : ''}>Assessment</option>
+                            <option value="Offer" ${app.status === 'Offer' ? 'selected' : ''}>Offer</option>
+                            <option value="Rejected" ${app.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    };
+
+    const wireTrackingFilters = () => {
+        const searchInput = document.getElementById('app-search-input');
+        const filterSelect = document.getElementById('app-status-filter');
+
+        const filterHandler = () => {
+            const query = searchInput.value.toLowerCase().trim();
+            const status = filterSelect.value;
+
+            const filtered = trackedApplications.filter(app => {
+                const matchesSearch = app.company.toLowerCase().includes(query) || app.role.toLowerCase().includes(query);
+                const matchesStatus = status === 'all' || app.status === status;
+                return matchesSearch && matchesStatus;
+            });
+
+            renderTrackingGrid(filtered);
+        };
+
+        if (searchInput && !searchInput.dataset.wired) {
+            searchInput.addEventListener('input', filterHandler);
+            searchInput.dataset.wired = 'true';
+        }
+        if (filterSelect && !filterSelect.dataset.wired) {
+            filterSelect.addEventListener('change', filterHandler);
+            filterSelect.dataset.wired = 'true';
+        }
+    };
+
+    window.saveAppNotes = async (appId, notes) => {
+        try {
+            await authFetch('/api/apply/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ application_id: appId, notes: notes, status: trackedApplications.find(a => a.id === appId).status })
+            });
+            showToast('📝 Notes saved');
+        } catch (e) {
+            showToast('❌ Failed to save notes');
+        }
+    };
+
+    window.updateAppStatus = async (appId, status) => {
+        try {
+            await authFetch('/api/apply/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ application_id: appId, status: status })
+            });
+            showToast(`💼 Status updated to: ${status}`);
+            window.loadJobApplicationsTracker();
+        } catch (e) {
+            showToast('❌ Failed to update status');
+        }
+    };
 
 });
  
